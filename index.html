@@ -1324,32 +1324,46 @@ CREATE POLICY "allow_public_update" ON logs
                 return;
             }
 
+            if (reps === 0) {
+                showToast('Please enter a number greater than 0', 'error');
+                return;
+            }
+
             const btn = event.target;
             btn.classList.add('loading');
 
-            // Log to Supabase
-            const synced = await syncLog(currentUser, getTodayKey(), exercise, reps);
+            try {
+                // Save locally FIRST
+                const logs = JSON.parse(localStorage.getItem(`logs_${currentUser}`) || '[]');
+                const existingIndex = logs.findIndex(l => l.date === getTodayKey() && l.exercise === exercise);
+                
+                if (existingIndex >= 0) {
+                    logs[existingIndex].reps = reps;
+                } else {
+                    logs.push({
+                        date: getTodayKey(),
+                        exercise: exercise,
+                        reps: reps,
+                        created_at: new Date().toISOString()
+                    });
+                }
+                
+                localStorage.setItem(`logs_${currentUser}`, JSON.stringify(logs));
+                console.log(`Saved ${exercise} for ${currentUser}:`, logs);
 
-            // Save locally
-            const logs = JSON.parse(localStorage.getItem(`logs_${currentUser}`) || '[]');
-            const existingIndex = logs.findIndex(l => l.date === getTodayKey() && l.exercise === exercise);
-            if (existingIndex >= 0) {
-                logs[existingIndex].reps = reps;
-            } else {
-                logs.push({
-                    date: getTodayKey(),
-                    exercise: exercise,
-                    reps: reps,
-                    created_at: new Date().toISOString()
-                });
+                // Try to sync to Supabase (don't wait, just fire and forget)
+                syncLog(currentUser, getTodayKey(), exercise, reps);
+
+                btn.classList.remove('loading');
+                showToast(`${exercise.charAt(0).toUpperCase() + exercise.slice(1)}: ${reps} reps`, 'success');
+
+                // Reload UI with fresh data from localStorage
+                loadData();
+            } catch (err) {
+                console.error('Error logging exercise:', err);
+                btn.classList.remove('loading');
+                showToast('Error saving exercise', 'error');
             }
-            localStorage.setItem(`logs_${currentUser}`, JSON.stringify(logs));
-
-            btn.classList.remove('loading');
-            showToast(`${exercise.charAt(0).toUpperCase() + exercise.slice(1)}: ${reps} reps${synced ? '' : ' (saved locally)'}`, 'success');
-
-            // Update UI immediately with the logs we just saved
-            updateUI(logs);
         }
 
         function showToast(message, type = 'success') {
