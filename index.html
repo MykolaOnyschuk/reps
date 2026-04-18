@@ -973,68 +973,30 @@ CREATE POLICY "allow_public_update" ON logs
 
         async function syncLog(userId, date, exercise, reps) {
             if (!SUPABASE_URL || !SUPABASE_KEY) return false;
-
             try {
-                updateSyncStatus('syncing');
-
-                // Use UPSERT to handle existing records
-                const response = await fetch(
-                    `${SUPABASE_URL}/rest/v1/logs?user_id=eq.${userId}&date=eq.${date}&exercise=eq.${exercise}`,
-                    {
-                        method: 'PATCH',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'apikey': SUPABASE_KEY,
-                            'Authorization': `Bearer ${SUPABASE_KEY}`
-                        },
-                        body: JSON.stringify({
-                            reps: reps
-                        })
+                console.log(`Syncing: ${userId} ${date} ${exercise} ${reps}`);
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/logs`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    },
+                    body: JSON.stringify({user_id: userId, date: date, exercise: exercise, reps: reps})
+                });
+                if (res.ok || res.status === 409) {
+                    if (res.status === 409) {
+                        const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/logs?user_id=eq.${userId}&date=eq.${date}&exercise=eq.${exercise}`, {
+                            method: 'PATCH',
+                            headers: {'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`},
+                            body: JSON.stringify({reps: reps})
+                        });
+                        return patchRes.ok;
                     }
-                );
-
-                if (response.ok) {
-                    updateSyncStatus('synced');
                     return true;
-                } else if (response.status === 404) {
-                    // Record doesn't exist, create it
-                    const insertResponse = await fetch(
-                        `${SUPABASE_URL}/rest/v1/logs`,
-                        {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'apikey': SUPABASE_KEY,
-                                'Authorization': `Bearer ${SUPABASE_KEY}`
-                            },
-                            body: JSON.stringify({
-                                user_id: userId,
-                                date: date,
-                                exercise: exercise,
-                                reps: reps
-                            })
-                        }
-                    );
-                    
-                    if (insertResponse.ok) {
-                        updateSyncStatus('synced');
-                        return true;
-                    } else {
-                        console.error('Insert error:', await insertResponse.json());
-                        updateSyncStatus('error');
-                        return false;
-                    }
-                } else {
-                    const error = await response.json();
-                    console.error('Sync error:', error);
-                    updateSyncStatus('error');
-                    return false;
                 }
-            } catch (err) {
-                console.error('Network error:', err);
-                updateSyncStatus('error');
                 return false;
-            }
+            } catch(e) { console.error(e); return false; }
         }
 
         async function fetchUserLogs(userId) {
