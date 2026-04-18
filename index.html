@@ -1111,16 +1111,31 @@ CREATE POLICY "allow_public_update" ON logs
             });
         });
 
+        // Initialize all users' data on page load
+        function initializeAllUsers() {
+            const users = ['oleg', 'slavic', 'kolya'];
+            if (SUPABASE_URL && SUPABASE_KEY) {
+                Promise.all(users.map(user => 
+                    fetchUserLogs(user).then(logs => {
+                        localStorage.setItem(`logs_${user}`, JSON.stringify(logs));
+                    }).catch(err => console.error(`Failed to load ${user}:`, err))
+                )).then(() => {
+                    loadData();
+                });
+            } else {
+                loadData();
+            }
+        }
+
         // Initialize
         window.addEventListener('DOMContentLoaded', function() {
-            // Skip setup modal - credentials are hardcoded
             document.getElementById('setupModal').classList.add('hidden');
-            loadData();
+            initializeAllUsers();
         });
         
         // Also initialize on page load
         document.getElementById('setupModal').classList.add('hidden');
-        loadData();
+        initializeAllUsers();
     </script>
 </body>
 </html>
