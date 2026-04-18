@@ -659,17 +659,17 @@ CREATE POLICY "allow_public_update" ON logs
 
     <div class="container">
         <div class="user-selector">
-            <button class="user-btn active" data-user="Slavic">
+            <button class="user-btn active" data-user="oleg">
                 <span class="user-icon">💪</span>
-                User 1
+                Oleg
             </button>
-            <button class="user-btn" data-user="Oleg">
+            <button class="user-btn" data-user="slavic">
                 <span class="user-icon">🏋️</span>
-                User 2
+                Slavic
             </button>
-            <button class="user-btn" data-user="Kolya">
+            <button class="user-btn" data-user="kolya">
                 <span class="user-icon">🔥</span>
-                User 3
+                Kolya
             </button>
         </div>
 
@@ -764,9 +764,9 @@ CREATE POLICY "allow_public_update" ON logs
         // ============================================
         // CONFIG & STATE
         // ============================================
-        let SUPABASE_URL = null;
-        let SUPABASE_KEY = null;
-        let currentUser = 'user1';
+        let SUPABASE_URL = 'https://zcywoswqkmjtw.supabase.co';
+        let SUPABASE_KEY = 'sb_publishable_P3vjnmbKD60zxF2XVQM10w_vRFeCoSc';
+        let currentUser = 'oleg';
         const GOAL = 100;
         const TOTAL_DAYS = 100;
 
@@ -774,14 +774,8 @@ CREATE POLICY "allow_public_update" ON logs
         // SUPABASE INTEGRATION
         // ============================================
         function loadConfig() {
-            const url = localStorage.getItem('supabase_url');
-            const key = localStorage.getItem('supabase_key');
-            if (url && key) {
-                SUPABASE_URL = url;
-                SUPABASE_KEY = key;
-                return true;
-            }
-            return false;
+            // Credentials are hardcoded, always ready
+            return true;
         }
 
         function saveSetup() {
@@ -1091,23 +1085,14 @@ CREATE POLICY "allow_public_update" ON logs
 
         // Initialize
         window.addEventListener('DOMContentLoaded', function() {
-            const hasConfig = loadConfig();
-            if (!hasConfig || !SUPABASE_URL || !SUPABASE_KEY) {
-                // Show setup modal
-                document.getElementById('setupModal').classList.remove('hidden');
-            } else {
-                document.getElementById('setupModal').classList.add('hidden');
-                loadData();
-            }
-        });
-        
-        // Also check on page load
-        if (!loadConfig() || !SUPABASE_URL || !SUPABASE_KEY) {
-            document.getElementById('setupModal').classList.remove('hidden');
-        } else {
+            // Skip setup modal - credentials are hardcoded
             document.getElementById('setupModal').classList.add('hidden');
             loadData();
-        }
+        });
+        
+        // Also initialize on page load
+        document.getElementById('setupModal').classList.add('hidden');
+        loadData();
     </script>
 </body>
 </html>
