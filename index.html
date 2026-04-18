@@ -926,8 +926,8 @@ CREATE POLICY "allow_public_update" ON logs
         // ============================================
         // CONFIG & STATE
         // ============================================
-        let SUPABASE_URL = 'https://tzpobmqqcywoswqkmjtw.supabase.co';
-        let SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR6cG9ibXFxY3l3b3N3cWttanR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MTczMTAsImV4cCI6MjA5MjA5MzMxMH0.N-Iu-RHDYSZ9WG_Q_ShjclD5n4M9PMz6ff1WzVJ6Aac';
+        const SUPABASE_URL = 'https://tzpobmqqcywoswqkmjtw.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR6cG9ibXFxY3l3b3N3cWttanR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MTczMTAsImV4cCI6MjA5MjA5MzMxMH0.N-Iu-RHDYSZ9WG_Q_ShjclD5n4M9PMz6ff1WzVJ6Aac';
         let currentUser = 'oleg';
         const GOAL = 100;
         const TOTAL_DAYS = 100;
@@ -935,76 +935,47 @@ CREATE POLICY "allow_public_update" ON logs
         // ============================================
         // SUPABASE INTEGRATION
         // ============================================
-        function loadConfig() {
-            // Credentials are hardcoded, always ready
-            return true;
-        }
 
-        function saveSetup() {
-            const url = document.getElementById('supabaseUrl').value.trim();
-            const key = document.getElementById('supabaseKey').value.trim();
-
-            if (!url || !key) {
-                showToast('Please enter both URL and Key', 'error');
-                return;
-            }
-
-            if (!url.startsWith('https://') || !url.includes('supabase.co')) {
-                showToast('Invalid Project URL format', 'error');
-                return;
-            }
-
-            if (!key.startsWith('sb_') && !key.startsWith('eyJ')) {
-                showToast('Invalid API Key format', 'error');
-                return;
-            }
-
-            localStorage.setItem('supabase_url', url);
-            localStorage.setItem('supabase_key', key);
-            SUPABASE_URL = url;
-            SUPABASE_KEY = key;
-
-            console.log('Credentials saved:', { url, key: key.substring(0, 20) + '...' });
-            
-            document.getElementById('setupModal').classList.add('hidden');
-            loadData();
-            showToast('Setup complete! Syncing with Supabase...', 'success');
-        }
-
+        // FIX: True upsert using Prefer: resolution=merge-duplicates
+        // This requires UNIQUE(user_id, date, exercise) constraint on the table.
+        // If you haven't added it yet, run in Supabase SQL Editor:
+        //   ALTER TABLE logs ADD CONSTRAINT logs_user_date_exercise_key UNIQUE (user_id, date, exercise);
         async function syncLog(userId, date, exercise, reps) {
-            if (!SUPABASE_URL || !SUPABASE_KEY) return false;
             try {
-                console.log(`Syncing: ${userId} ${date} ${exercise} ${reps}`);
+                updateSyncStatus('syncing');
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/logs`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'apikey': SUPABASE_KEY,
-                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Prefer': 'resolution=merge-duplicates'  // FIX: atomic upsert
                     },
-                    body: JSON.stringify({user_id: userId, date: date, exercise: exercise, reps: reps})
+                    body: JSON.stringify({ user_id: userId, date: date, exercise: exercise, reps: reps })
                 });
-                if (res.ok || res.status === 409) {
-                    if (res.status === 409) {
-                        const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/logs?user_id=eq.${userId}&date=eq.${date}&exercise=eq.${exercise}`, {
-                            method: 'PATCH',
-                            headers: {'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`},
-                            body: JSON.stringify({reps: reps})
-                        });
-                        return patchRes.ok;
-                    }
+
+                if (res.ok) {
+                    console.log(`✓ Synced ${userId} ${exercise} ${reps} reps on ${date}`);
+                    updateSyncStatus('synced');
                     return true;
+                } else {
+                    const errText = await res.text();
+                    console.error(`✗ Sync failed (${res.status}):`, errText);
+                    updateSyncStatus('error');
+                    return false;
                 }
+            } catch (e) {
+                console.error('✗ Sync network error:', e);
+                updateSyncStatus('error');
                 return false;
-            } catch(e) { console.error(e); return false; }
+            }
         }
 
+        // FIX: fetchUserLogs is now actually called (it was defined but never used)
         async function fetchUserLogs(userId) {
-            if (!SUPABASE_URL || !SUPABASE_KEY) return [];
-
             try {
-                const response = await fetch(
-                    `${SUPABASE_URL}/rest/v1/logs?user_id=eq.${userId}`,
+                const res = await fetch(
+                    `${SUPABASE_URL}/rest/v1/logs?user_id=eq.${userId}&order=date.asc`,
                     {
                         headers: {
                             'apikey': SUPABASE_KEY,
@@ -1012,14 +983,16 @@ CREATE POLICY "allow_public_update" ON logs
                         }
                     }
                 );
-
-                if (response.ok) {
-                    return await response.json();
+                if (res.ok) {
+                    const data = await res.json();
+                    console.log(`Fetched ${data.length} logs for ${userId} from Supabase`);
+                    return data;
                 }
-                return [];
+                console.error('fetchUserLogs failed:', res.status, await res.text());
+                return null; // null = fetch failed (vs [] = genuinely no data)
             } catch (err) {
-                console.error('Fetch error:', err);
-                return [];
+                console.error('fetchUserLogs network error:', err);
+                return null;
             }
         }
 
@@ -1032,7 +1005,7 @@ CREATE POLICY "allow_public_update" ON logs
                 el.textContent = '⟳ Syncing...';
                 el.className = 'sync-status syncing';
             } else if (status === 'error') {
-                el.textContent = '✗ Sync Error';
+                el.textContent = '✗ Sync Error — check console';
                 el.className = 'sync-status error';
             } else {
                 el.textContent = '● Offline';
@@ -1058,11 +1031,24 @@ CREATE POLICY "allow_public_update" ON logs
             return data;
         }
 
-        function loadData() {
-            // Use localStorage as single source of truth
-            // Don't fetch from Supabase because it only has partial data (pushups)
-            const logs = JSON.parse(localStorage.getItem(`logs_${currentUser}`) || '[]');
-            updateUI(logs);
+        // FIX: loadData now fetches from Supabase first (source of truth).
+        // Falls back to localStorage only if Supabase is unreachable.
+        async function loadData() {
+            updateSyncStatus('syncing');
+            const remoteLogs = await fetchUserLogs(currentUser);
+
+            if (remoteLogs !== null) {
+                // Supabase is the source of truth — update localStorage cache
+                localStorage.setItem(`logs_${currentUser}`, JSON.stringify(remoteLogs));
+                updateUI(remoteLogs);
+                updateSyncStatus('synced');
+            } else {
+                // Supabase unreachable — fall back to local cache
+                console.warn('Using localStorage fallback for', currentUser);
+                const cachedLogs = JSON.parse(localStorage.getItem(`logs_${currentUser}`) || '[]');
+                updateUI(cachedLogs);
+                updateSyncStatus('error');
+            }
         }
 
         // ============================================
@@ -1275,12 +1261,7 @@ CREATE POLICY "allow_public_update" ON logs
             const input = document.getElementById(`${exercise}-input`);
             const reps = parseInt(input.value) || 0;
 
-            if (reps < 0) {
-                showToast('Invalid input', 'error');
-                return;
-            }
-
-            if (reps === 0) {
+            if (reps <= 0) {
                 showToast('Please enter a number greater than 0', 'error');
                 return;
             }
@@ -1289,32 +1270,31 @@ CREATE POLICY "allow_public_update" ON logs
             btn.classList.add('loading');
 
             try {
-                // Save locally FIRST
-                const logs = JSON.parse(localStorage.getItem(`logs_${currentUser}`) || '[]');
-                const existingIndex = logs.findIndex(l => l.date === getTodayKey() && l.exercise === exercise);
-                
-                if (existingIndex >= 0) {
-                    logs[existingIndex].reps = reps;
-                } else {
-                    logs.push({
-                        date: getTodayKey(),
-                        exercise: exercise,
-                        reps: reps,
-                        created_at: new Date().toISOString()
-                    });
-                }
-                
-                localStorage.setItem(`logs_${currentUser}`, JSON.stringify(logs));
-                console.log(`Saved ${exercise} for ${currentUser}:`, logs);
+                const date = getTodayKey();
 
-                // Try to sync to Supabase (don't wait, just fire and forget)
-                syncLog(currentUser, getTodayKey(), exercise, reps);
+                // Update localStorage cache immediately (optimistic UI)
+                const cachedLogs = JSON.parse(localStorage.getItem(`logs_${currentUser}`) || '[]');
+                const existingIndex = cachedLogs.findIndex(l => l.date === date && l.exercise === exercise);
+                if (existingIndex >= 0) {
+                    cachedLogs[existingIndex].reps = reps;
+                } else {
+                    cachedLogs.push({ date, exercise, reps, user_id: currentUser, created_at: new Date().toISOString() });
+                }
+                localStorage.setItem(`logs_${currentUser}`, JSON.stringify(cachedLogs));
+
+                // FIX: Await the sync — no more fire-and-forget
+                const synced = await syncLog(currentUser, date, exercise, reps);
 
                 btn.classList.remove('loading');
-                showToast(`${exercise.charAt(0).toUpperCase() + exercise.slice(1)}: ${reps} reps`, 'success');
 
-                // Reload UI with fresh data from localStorage
-                loadData();
+                if (synced) {
+                    showToast(`${exercise.charAt(0).toUpperCase() + exercise.slice(1)}: ${reps} reps saved`, 'success');
+                    // Reload from Supabase so UI reflects actual DB state
+                    await loadData();
+                } else {
+                    showToast('Saved locally — sync failed. Check connection.', 'error');
+                    updateUI(cachedLogs);
+                }
             } catch (err) {
                 console.error('Error logging exercise:', err);
                 btn.classList.remove('loading');
@@ -1354,22 +1334,14 @@ CREATE POLICY "allow_public_update" ON logs
             });
         });
 
-        // Initialize all users' data on page load
-        function initializeAllUsers() {
-            // Use localStorage as source of truth - don't fetch from Supabase on init
-            // This prevents overwriting local data with incomplete Supabase records
-            loadData();
-        }
-
-        // Initialize
+        // FIX: On page load, fetch from Supabase (source of truth)
         window.addEventListener('DOMContentLoaded', function() {
             document.getElementById('setupModal').classList.add('hidden');
-            initializeAllUsers();
+            loadData();
+
+            // Poll Supabase every 30s so all users see each other's updates live
+            setInterval(loadData, 30000);
         });
-        
-        // Also initialize on page load
-        document.getElementById('setupModal').classList.add('hidden');
-        initializeAllUsers();
     </script>
 </body>
 </html>
