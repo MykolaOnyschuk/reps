@@ -3,189 +3,1345 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>100-Day Fitness Challenge</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>100-Day Challenge Tracker - Supabase Sync</title>
     <style>
-        :root { --primary: #2563eb; --bg: #f8fafc; }
-        body { font-family: system-ui, sans-serif; background: var(--bg); margin: 0; padding: 20px; }
-        .container { max-width: 800px; margin: auto; }
-        .header { text-align: center; margin-bottom: 20px; }
-        .user-selector { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
-        button { padding: 10px 20px; cursor: pointer; border: none; border-radius: 5px; background: #ddd; }
-        button.active { background: var(--primary); color: white; }
-        .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .day { aspect-ratio: 1; border: 1px solid #eee; padding: 5px; font-size: 12px; position: relative; cursor: pointer; }
-        .day:hover { background: #f0f7ff; }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 2px; }
-        .complete { background: #22c55e; }
-        .partial { background: #eab308; }
-        .empty { background: #e2e8f0; }
-        /* Modal Styles */
-        #modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.3); z-index: 100; }
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 90; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0f0f0f;
+            --secondary: #1a1a1a;
+            --accent: #00d9ff;
+            --accent-alt: #ff006e;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --border: #2a2a2a;
+            --success: #00ff41;
+            --warning: #ffa500;
+            --error: #ff1744;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, var(--primary) 0%, #1a0f2e 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: var(--secondary);
+            border-bottom: 2px solid var(--accent);
+            padding: 2rem;
+            text-align: center;
+            animation: slideDown 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -2px;
+            margin-bottom: 0.5rem;
+            color: var(--accent);
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .sync-status {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: var(--primary);
+            border: 1px solid var(--border);
+            border-radius: 0;
+            font-size: 0.75rem;
+            margin-top: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .sync-status.synced {
+            border-color: var(--success);
+            color: var(--success);
+        }
+
+        .sync-status.error {
+            border-color: var(--error);
+            color: var(--error);
+        }
+
+        .sync-status.syncing {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Setup Modal */
+        .setup-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 15, 15, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+        }
+
+        .setup-modal.hidden {
+            display: none;
+        }
+
+        .setup-content {
+            background: var(--secondary);
+            border: 2px solid var(--accent);
+            padding: 2rem;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .setup-content h2 {
+            color: var(--accent);
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .setup-field {
+            margin-bottom: 1.5rem;
+        }
+
+        .setup-field label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+        }
+
+        .setup-field input {
+            width: 100%;
+            padding: 0.8rem;
+            background: var(--primary);
+            border: 2px solid var(--border);
+            color: var(--text-primary);
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .setup-field input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 15px rgba(0, 217, 255, 0.2);
+        }
+
+        .setup-instructions {
+            background: var(--primary);
+            border-left: 3px solid var(--accent);
+            padding: 1rem;
+            margin-bottom: 2rem;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        .setup-instructions a {
+            color: var(--accent);
+            text-decoration: underline;
+        }
+
+        .btn-setup {
+            width: 100%;
+            padding: 1rem;
+            background: var(--accent);
+            color: var(--primary);
+            border: none;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        .btn-setup:hover {
+            box-shadow: 0 0 20px rgba(0, 217, 255, 0.6);
+        }
+
+        /* User Selector */
+        .user-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+            animation: fadeIn 0.8s 0.2s both;
+        }
+
+        .user-btn {
+            padding: 1.5rem;
+            border: 2px solid var(--border);
+            background: var(--secondary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .user-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--accent);
+            z-index: -1;
+            transition: left 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .user-btn:hover {
+            border-color: var(--accent);
+            color: var(--primary);
+        }
+
+        .user-btn:hover::before {
+            left: 0;
+        }
+
+        .user-btn.active {
+            background: var(--accent);
+            color: var(--primary);
+            border-color: var(--accent);
+            box-shadow: 0 0 30px rgba(0, 217, 255, 0.5);
+        }
+
+        .user-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        /* Main Content */
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            animation: fadeIn 0.8s 0.4s both;
+        }
+
+        /* Log Card */
+        .log-card {
+            background: var(--secondary);
+            border: 2px solid var(--border);
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .log-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(0, 217, 255, 0.1);
+        }
+
+        .log-card h2 {
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent);
+        }
+
+        .exercise-group {
+            margin-bottom: 2rem;
+        }
+
+        .exercise-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.8rem;
+        }
+
+        .exercise-name {
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.95rem;
+        }
+
+        .exercise-progress {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .exercise-count {
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .exercise-count.complete {
+            color: var(--success);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--border);
+            margin-bottom: 1rem;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--accent-alt));
+            transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.8rem;
+            align-items: center;
+        }
+
+        .reps-input {
+            flex: 1;
+            padding: 0.8rem;
+            background: var(--primary);
+            border: 2px solid var(--border);
+            color: var(--text-primary);
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .reps-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 15px rgba(0, 217, 255, 0.2);
+        }
+
+        .btn-log {
+            padding: 0.8rem 1.5rem;
+            background: var(--accent);
+            color: var(--primary);
+            border: none;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            font-size: 0.9rem;
+            position: relative;
+        }
+
+        .btn-log:hover {
+            box-shadow: 0 0 20px rgba(0, 217, 255, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .btn-log:active {
+            transform: translateY(0);
+        }
+
+        .btn-log.loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        /* Stats Card */
+        .stats-card {
+            background: var(--secondary);
+            border: 2px solid var(--border);
+            padding: 2rem;
+        }
+
+        .stats-card h2 {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent);
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .stat-value.complete {
+            color: var(--success);
+        }
+
+        /* Calendar */
+        .calendar-section {
+            grid-column: 1 / -1;
+            background: var(--secondary);
+            border: 2px solid var(--border);
+            padding: 2rem;
+            animation: fadeIn 0.8s 0.6s both;
+        }
+
+        .calendar-section h2 {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent);
+        }
+
+        #calendar-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .calendar-month {
+            background: var(--primary);
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            border-radius: 0;
+        }
+
+        .calendar-month h3 {
+            text-align: center;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+        }
+
+        .calendar-weekday {
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            padding: 0.5rem 0;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 0.5rem;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            background: var(--secondary);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-secondary);
+            position: relative;
+        }
+
+        .calendar-day:hover {
+            border-color: var(--accent);
+        }
+
+        .calendar-day.other-month {
+            color: var(--text-secondary);
+            opacity: 0.3;
+        }
+
+        .calendar-day.completed {
+            background: linear-gradient(135deg, var(--accent), var(--accent-alt));
+            color: var(--primary);
+            border-color: var(--accent);
+            box-shadow: 0 0 15px rgba(0, 217, 255, 0.3);
+        }
+
+        .calendar-day.partial {
+            background: var(--warning);
+            color: var(--primary);
+            border-color: var(--warning);
+        }
+
+        .day-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 15, 15, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1500;
+            backdrop-filter: blur(5px);
+        }
+
+        .day-modal.hidden {
+            display: none;
+        }
+
+        .day-modal-content {
+            background: var(--secondary);
+            border: 2px solid var(--accent);
+            padding: 2rem;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .day-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 1rem;
+        }
+
+        .day-modal-header h2 {
+            color: var(--accent);
+            font-size: 1.3rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 0;
+        }
+
+        .day-modal-close {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .day-modal-close:hover {
+            color: var(--accent);
+        }
+
+        .day-modal-body {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .day-exercise-result {
+            background: var(--primary);
+            border-left: 3px solid var(--accent);
+            padding: 1rem;
+            border-radius: 0;
+        }
+
+        .day-exercise-result.complete {
+            border-left-color: var(--success);
+            background: rgba(0, 255, 65, 0.1);
+        }
+
+        .day-exercise-result.incomplete {
+            border-left-color: var(--warning);
+            background: rgba(255, 165, 0, 0.1);
+        }
+
+        .day-exercise-result .exercise-title {
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .day-exercise-result .exercise-reps {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .day-exercise-result.complete .exercise-reps {
+            color: var(--success);
+        }
+
+        .day-no-data {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: var(--text-secondary);
+        }
+
+        /* Animations */
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            border-radius: 0;
+            border: 2px solid;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 1000;
+        }
+
+        .toast.success {
+            background: var(--success);
+            color: var(--primary);
+            border-color: var(--success);
+        }
+
+        .toast.error {
+            background: var(--error);
+            color: var(--text-primary);
+            border-color: var(--error);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .calendar-grid {
+                grid-template-columns: repeat(10, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .user-selector {
+                grid-template-columns: 1fr;
+            }
+
+            .calendar-grid {
+                grid-template-columns: repeat(7, 1fr);
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- Setup Modal -->
+    <div class="setup-modal" id="setupModal">
+        <div class="setup-content">
+            <h2>Setup Supabase Sync</h2>
+            <div class="setup-instructions">
+                <strong>Quick Setup Steps:</strong><br><br>
+                1. Go to <a href="https://supabase.com" target="_blank">supabase.com</a> and create a free account<br>
+                2. Create a new project<br>
+                3. Go to <strong>SQL Editor</strong> and run this:<br><br>
+                <code style="background: #0f0f0f; display: block; padding: 1rem; margin: 0.5rem 0; border-left: 2px solid #00d9ff; overflow-x: auto;">
+CREATE TABLE logs (
+  id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  user_id TEXT NOT NULL,
+  date DATE NOT NULL,
+  exercise TEXT NOT NULL,
+  reps INT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(user_id, date, exercise)
+);
 
-<div class="container">
+ALTER TABLE logs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "allow_public_insert" ON logs
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "allow_public_select" ON logs
+  FOR SELECT USING (true);
+
+CREATE POLICY "allow_public_update" ON logs
+  FOR UPDATE USING (true);
+                </code>
+                4. Go to <strong>Settings → API</strong> and copy your Project URL and Anon Key
+            </div>
+
+            <div class="setup-field">
+                <label for="supabaseUrl">Project URL</label>
+                <input 
+                    type="text" 
+                    id="supabaseUrl" 
+                    placeholder="https://xxxxx.supabase.co"
+                >
+            </div>
+
+            <div class="setup-field">
+                <label for="supabaseKey">Anon Key</label>
+                <input 
+                    type="password" 
+                    id="supabaseKey" 
+                    placeholder="eyJhbGc..."
+                >
+            </div>
+
+            <button class="btn-setup" onclick="saveSetup()">Save & Continue</button>
+        </div>
+    </div>
+
+    <!-- Day Detail Modal -->
+    <div class="day-modal hidden" id="dayModal">
+        <div class="day-modal-content">
+            <div class="day-modal-header">
+                <h2 id="dayModalTitle"></h2>
+                <button class="day-modal-close" onclick="closeDayModal()">✕</button>
+            </div>
+            <div class="day-modal-body" id="dayModalBody">
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
     <div class="header">
-        <h1>100-Day Tracker</h1>
-        <p id="current-user-display">Selecting User...</p>
+        <h1>100-DAY CHALLENGE</h1>
+        <p>Pushups • Situps • Crawls</p>
+        <div class="sync-status" id="syncStatus">● Offline</div>
     </div>
 
-    <div class="user-selector">
-        <button onclick="setUser('oleg')" id="btn-oleg">Oleg</button>
-        <button onclick="setUser('slavic')" id="btn-slavic">Slavic</button>
-        <button onclick="setUser('kolya')" id="btn-kolya">Kolya</button>
+    <div class="container">
+        <div class="user-selector">
+            <button class="user-btn active" data-user="oleg">
+                <span class="user-icon">💪</span>
+                Oleg
+            </button>
+            <button class="user-btn" data-user="slavic">
+                <span class="user-icon">🏋️</span>
+                Slavic
+            </button>
+            <button class="user-btn" data-user="kolya">
+                <span class="user-icon">🔥</span>
+                Kolya
+            </button>
+        </div>
+
+        <div class="content">
+            <div class="log-card">
+                <h2>Today's Log</h2>
+                
+                <div class="exercise-group">
+                    <div class="exercise-label">
+                        <span class="exercise-name">Pushups</span>
+                        <span class="exercise-progress">
+                            <span class="exercise-count" id="pushups-count">0</span>
+                            <span style="color: var(--text-secondary);">/ 100</span>
+                        </span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="pushups-bar" style="width: 0%"></div>
+                    </div>
+                    <div class="input-group">
+                        <input type="number" class="reps-input" id="pushups-input" placeholder="Enter reps" min="0">
+                        <button class="btn-log" onclick="logExercise('pushups')">Log</button>
+                    </div>
+                </div>
+
+                <div class="exercise-group">
+                    <div class="exercise-label">
+                        <span class="exercise-name">Situps</span>
+                        <span class="exercise-progress">
+                            <span class="exercise-count" id="situps-count">0</span>
+                            <span style="color: var(--text-secondary);">/ 100</span>
+                        </span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="situps-bar" style="width: 0%"></div>
+                    </div>
+                    <div class="input-group">
+                        <input type="number" class="reps-input" id="situps-input" placeholder="Enter reps" min="0">
+                        <button class="btn-log" onclick="logExercise('situps')">Log</button>
+                    </div>
+                </div>
+
+                <div class="exercise-group">
+                    <div class="exercise-label">
+                        <span class="exercise-name">Crawls</span>
+                        <span class="exercise-progress">
+                            <span class="exercise-count" id="crawls-count">0</span>
+                            <span style="color: var(--text-secondary);">/ 100</span>
+                        </span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="crawls-bar" style="width: 0%"></div>
+                    </div>
+                    <div class="input-group">
+                        <input type="number" class="reps-input" id="crawls-input" placeholder="Enter reps" min="0">
+                        <button class="btn-log" onclick="logExercise('crawls')">Log</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-card">
+                <h2>Today's Stats</h2>
+                <div class="stat-item">
+                    <span class="stat-label">Pushups</span>
+                    <span class="stat-value" id="stat-pushups">0%</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Situps</span>
+                    <span class="stat-value" id="stat-situps">0%</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Crawls</span>
+                    <span class="stat-value" id="stat-crawls">0%</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Day Streak</span>
+                    <span class="stat-value" id="stat-streak">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Total Days</span>
+                    <span class="stat-value" id="stat-days">0</span>
+                </div>
+            </div>
+
+            <div class="calendar-section">
+                <h2>100-Day Calendar (April 18 - July 26)</h2>
+                <div id="calendar-container"></div>
+            </div>
+        </div>
     </div>
 
-    <div id="calendar" class="calendar"></div>
-</div>
+    <script>
+        // ============================================
+        // CONFIG & STATE
+        // ============================================
+        const SUPABASE_URL = 'https://tzpobmqqcywoswqkmjtw.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR6cG9ibXFxY3l3b3N3cWttanR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MTczMTAsImV4cCI6MjA5MjA5MzMxMH0.N-Iu-RHDYSZ9WG_Q_ShjclD5n4M9PMz6ff1WzVJ6Aac';
+        let currentUser = 'oleg';
+        const GOAL = 100;
+        const TOTAL_DAYS = 100;
 
-<div class="overlay" id="overlay" onclick="closeModal()"></div>
-<div id="modal">
-    <h3 id="modal-date-title">Log Data</h3>
-    <div style="display: flex; flex-direction: column; gap: 10px;">
-        <label>Pushups: <input type="number" id="input-pushups" value="0"></label>
-        <label>Situps: <input type="number" id="input-situps" value="0"></label>
-        <label>Crawls: <input type="number" id="input-crawls" value="0"></label>
-        <button onclick="saveData()" style="background: var(--primary); color: white;">Save to Cloud</button>
-    </div>
-</div>
+        // ============================================
+        // SUPABASE INTEGRATION
+        // ============================================
 
-<script>
-    // 1. CONFIGURATION
-    const SB_URL = "https://tzpobmqqcywoswqkmjtw.supabase.co";
-    const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR6cG9ibXFxY3l3b3N3cWttanR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MTczMTAsImV4cCI6MjA5MjA5MzMxMH0.N-Iu-RHDYSZ9WG_Q_ShjclD5n4M9PMz6ff1WzVJ6Aac";
-    const _supabase = supabase.createClient(SB_URL, SB_KEY);
+        // FIX: True upsert using Prefer: resolution=merge-duplicates
+        // This requires UNIQUE(user_id, date, exercise) constraint on the table.
+        // If you haven't added it yet, run in Supabase SQL Editor:
+        //   ALTER TABLE logs ADD CONSTRAINT logs_user_date_exercise_key UNIQUE (user_id, date, exercise);
+        async function syncLog(userId, date, exercise, reps) {
+            try {
+                updateSyncStatus('syncing');
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/logs`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Prefer': 'resolution=merge-duplicates'  // FIX: atomic upsert
+                    },
+                    body: JSON.stringify({ user_id: userId, date: date, exercise: exercise, reps: reps })
+                });
 
-    let currentUser = 'oleg';
-    let selectedDate = '';
-    let fitnessData = { oleg: {}, slavic: {}, kolya: {} };
-
-    // 2. INITIALIZATION
-    async function init() {
-        setUser('oleg');
-        await fetchAllData(); // Load initial state
-        subscribeToChanges(); // Turn on Real-time
-    }
-
-    function setUser(user) {
-        currentUser = user;
-        document.querySelectorAll('.user-selector button').forEach(b => b.classList.remove('active'));
-        document.getElementById(`btn-${user}`).classList.add('active');
-        document.getElementById('current-user-display').innerText = `Current User: ${user.toUpperCase()}`;
-        renderCalendar();
-    }
-
-    // 3. CORE SYNC LOGIC (The Fix)
-    async function fetchAllData() {
-        const { data, error } = await _supabase.from('logs').select('*');
-        if (error) return console.error("Error fetching:", error);
-
-        // Reset local data structure
-        fitnessData = { oleg: {}, slavic: {}, kolya: {} };
-        
-        // Map DB rows to our local object
-        data.forEach(row => {
-            if (!fitnessData[row.user_id][row.date]) {
-                fitnessData[row.user_id][row.date] = { pushups: 0, situps: 0, crawls: 0 };
+                if (res.ok) {
+                    console.log(`✓ Synced ${userId} ${exercise} ${reps} reps on ${date}`);
+                    updateSyncStatus('synced');
+                    return true;
+                } else {
+                    const errText = await res.text();
+                    console.error(`✗ Sync failed (${res.status}):`, errText);
+                    updateSyncStatus('error');
+                    return false;
+                }
+            } catch (e) {
+                console.error('✗ Sync network error:', e);
+                updateSyncStatus('error');
+                return false;
             }
-            fitnessData[row.user_id][row.date][row.exercise] = row.reps;
-        });
-
-        localStorage.setItem('fitnessData', JSON.stringify(fitnessData));
-        renderCalendar();
-    }
-
-    async function saveData() {
-        const pushups = parseInt(document.getElementById('input-pushups').value) || 0;
-        const situps = parseInt(document.getElementById('input-situps').value) || 0;
-        const crawls = parseInt(document.getElementById('input-crawls').value) || 0;
-
-        const exercises = [
-            { name: 'pushups', val: pushups },
-            { name: 'situps', val: situps },
-            { name: 'crawls', val: crawls }
-        ];
-
-        // Prepare batch upsert
-        const updates = exercises.map(ex => ({
-            user_id: currentUser,
-            date: selectedDate,
-            exercise: ex.name,
-            reps: ex.val
-        }));
-
-        const { error } = await _supabase.from('logs').upsert(updates, { onConflict: 'user_id, date, exercise' });
-
-        if (error) {
-            alert("Error saving: " + error.message);
-        } else {
-            closeModal();
-            // No need to manually render; the subscription handles it!
         }
-    }
 
-    // 4. REAL-TIME SUBSCRIPTION
-    function subscribeToChanges() {
-        _supabase
-            .channel('schema-db-changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'logs' }, (payload) => {
-                console.log('Change received, syncing...');
-                fetchAllData(); 
-            })
-            .subscribe();
-    }
+        // FIX: fetchUserLogs is now actually called (it was defined but never used)
+        async function fetchUserLogs(userId) {
+            try {
+                const res = await fetch(
+                    `${SUPABASE_URL}/rest/v1/logs?user_id=eq.${userId}&order=date.asc`,
+                    {
+                        headers: {
+                            'apikey': SUPABASE_KEY,
+                            'Authorization': `Bearer ${SUPABASE_KEY}`
+                        }
+                    }
+                );
+                if (res.ok) {
+                    const data = await res.json();
+                    console.log(`Fetched ${data.length} logs for ${userId} from Supabase`);
+                    return data;
+                }
+                console.error('fetchUserLogs failed:', res.status, await res.text());
+                return null; // null = fetch failed (vs [] = genuinely no data)
+            } catch (err) {
+                console.error('fetchUserLogs network error:', err);
+                return null;
+            }
+        }
 
-    // 5. UI RENDERING
-    function renderCalendar() {
-        const container = document.getElementById('calendar');
-        container.innerHTML = '';
-        
-        // Start from April 1, 2026 for 100 days
-        let start = new Date('2026-04-01T12:00:00');
-        
-        for (let i = 0; i < 100; i++) {
-            let d = new Date(start);
-            d.setDate(start.getDate() + i);
-            let dateStr = d.toISOString().split('T')[0];
-            
-            const dayEl = document.createElement('div');
-            dayEl.className = 'day';
-            dayEl.innerHTML = `<div>${d.getDate()} ${d.toLocaleString('default', {month:'short'})}</div>`;
-            
-            // Add progress dots
-            const userData = fitnessData[currentUser][dateStr] || {};
-            ['pushups', 'situps', 'crawls'].forEach(ex => {
-                const dot = document.createElement('span');
-                dot.className = `status-dot ${(userData[ex] >= 100) ? 'complete' : (userData[ex] > 0 ? 'partial' : 'empty')}`;
-                dayEl.appendChild(dot);
+        function updateSyncStatus(status) {
+            const el = document.getElementById('syncStatus');
+            if (status === 'synced') {
+                el.textContent = '✓ Synced';
+                el.className = 'sync-status synced';
+            } else if (status === 'syncing') {
+                el.textContent = '⟳ Syncing...';
+                el.className = 'sync-status syncing';
+            } else if (status === 'error') {
+                el.textContent = '✗ Sync Error — check console';
+                el.className = 'sync-status error';
+            } else {
+                el.textContent = '● Offline';
+                el.className = 'sync-status';
+            }
+        }
+
+        // ============================================
+        // UTILITIES
+        // ============================================
+        function getTodayKey() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        function getTodayData(logs) {
+            const today = getTodayKey();
+            const data = { pushups: 0, situps: 0, crawls: 0 };
+            logs.forEach(log => {
+                if (log.date === today) {
+                    data[log.exercise] = log.reps;
+                }
+            });
+            return data;
+        }
+
+        // FIX: loadData now fetches from Supabase first (source of truth).
+        // Falls back to localStorage only if Supabase is unreachable.
+        async function loadData() {
+            updateSyncStatus('syncing');
+            const remoteLogs = await fetchUserLogs(currentUser);
+
+            if (remoteLogs !== null) {
+                // Supabase is the source of truth — update localStorage cache
+                localStorage.setItem(`logs_${currentUser}`, JSON.stringify(remoteLogs));
+                updateUI(remoteLogs);
+                updateSyncStatus('synced');
+            } else {
+                // Supabase unreachable — fall back to local cache
+                console.warn('Using localStorage fallback for', currentUser);
+                const cachedLogs = JSON.parse(localStorage.getItem(`logs_${currentUser}`) || '[]');
+                updateUI(cachedLogs);
+                updateSyncStatus('error');
+            }
+        }
+
+        // ============================================
+        // UI UPDATES
+        // ============================================
+        function updateUI(logs) {
+            const today = getTodayData(logs);
+
+            updateExerciseUI('pushups', today.pushups);
+            updateExerciseUI('situps', today.situps);
+            updateExerciseUI('crawls', today.crawls);
+            updateStats(today, logs);
+            updateCalendar(logs);
+
+            document.getElementById('pushups-input').value = '';
+            document.getElementById('situps-input').value = '';
+            document.getElementById('crawls-input').value = '';
+        }
+
+        function updateExerciseUI(exercise, reps) {
+            const percent = (reps / GOAL) * 100;
+            const countElement = document.getElementById(`${exercise}-count`);
+            const barElement = document.getElementById(`${exercise}-bar`);
+
+            countElement.textContent = reps;
+            barElement.style.width = Math.min(percent, 100) + '%';
+
+            if (reps >= GOAL) {
+                countElement.classList.add('complete');
+            } else {
+                countElement.classList.remove('complete');
+            }
+        }
+
+        function updateStats(today, logs) {
+            document.getElementById('stat-pushups').textContent = 
+                Math.min(Math.round((today.pushups / GOAL) * 100), 100) + '%';
+            document.getElementById('stat-situps').textContent = 
+                Math.min(Math.round((today.situps / GOAL) * 100), 100) + '%';
+            document.getElementById('stat-crawls').textContent = 
+                Math.min(Math.round((today.crawls / GOAL) * 100), 100) + '%';
+
+            const uniqueDates = new Set(logs.map(l => l.date));
+            document.getElementById('stat-days').textContent = uniqueDates.size;
+
+            // Streak calculation
+            let streak = 0;
+            let checkDate = new Date();
+            for (let i = 0; i < TOTAL_DAYS; i++) {
+                const dateStr = checkDate.toISOString().split('T')[0];
+                const dayLogs = logs.filter(l => l.date === dateStr);
+                const completed = dayLogs.some(l => l.exercise === 'pushups' && l.reps > 0) &&
+                                dayLogs.some(l => l.exercise === 'situps' && l.reps > 0) &&
+                                dayLogs.some(l => l.exercise === 'crawls' && l.reps > 0);
+                if (completed) {
+                    streak++;
+                    checkDate.setDate(checkDate.getDate() - 1);
+                } else {
+                    break;
+                }
+            }
+            document.getElementById('stat-streak').textContent = streak;
+        }
+
+        function updateCalendar(logs) {
+            const container = document.getElementById('calendar-container');
+            container.innerHTML = '';
+
+            // Challenge starts April 18, 2026 and runs for 100 days
+            const startDate = new Date(2026, 3, 18); // April 18, 2026
+            const endDate = new Date(2026, 6, 26); // July 26, 2026
+
+            // Generate 4 months: April, May, June, July
+            const months = [
+                { name: 'April', year: 2026, days: 30, startDay: 18 },
+                { name: 'May', year: 2026, days: 31, startDay: 1 },
+                { name: 'June', year: 2026, days: 30, startDay: 1 },
+                { name: 'July', year: 2026, days: 26, startDay: 1 }
+            ];
+
+            months.forEach(month => {
+                const monthDiv = document.createElement('div');
+                monthDiv.className = 'calendar-month';
+
+                const titleDiv = document.createElement('h3');
+                titleDiv.textContent = `${month.name} ${month.year}`;
+                monthDiv.appendChild(titleDiv);
+
+                const gridDiv = document.createElement('div');
+                gridDiv.className = 'calendar-grid';
+
+                // Weekday headers
+                const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                weekdays.forEach(day => {
+                    const dayHeader = document.createElement('div');
+                    dayHeader.className = 'calendar-weekday';
+                    dayHeader.textContent = day;
+                    gridDiv.appendChild(dayHeader);
+                });
+
+                // Get first day of month
+                const firstDay = new Date(month.year, months.indexOf(month), 1);
+                const startingDayOfWeek = firstDay.getDay();
+
+                // Add empty cells for days before month starts
+                for (let i = 0; i < startingDayOfWeek; i++) {
+                    const emptyCell = document.createElement('div');
+                    emptyCell.className = 'calendar-day other-month';
+                    gridDiv.appendChild(emptyCell);
+                }
+
+                // Add days of month
+                for (let day = month.startDay; day <= month.days; day++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'calendar-day';
+                    cell.textContent = day;
+
+                    // Check if this is today
+                    const today = new Date();
+                    const cellDate = new Date(month.year, months.indexOf(month), day);
+                    if (cellDate.toDateString() === today.toDateString()) {
+                        cell.classList.add('today');
+                    }
+
+                    // Check logs for this date
+                    const dateStr = cellDate.toISOString().split('T')[0];
+                    const dayLogs = logs.filter(l => l.date === dateStr);
+
+                    if (dayLogs.length > 0) {
+                        const allComplete = dayLogs.some(l => l.exercise === 'pushups' && l.reps >= GOAL) &&
+                                           dayLogs.some(l => l.exercise === 'situps' && l.reps >= GOAL) &&
+                                           dayLogs.some(l => l.exercise === 'crawls' && l.reps >= GOAL);
+
+                        if (allComplete) {
+                            cell.classList.add('completed');
+                        } else {
+                            cell.classList.add('partial');
+                        }
+                    }
+
+                    // Make day clickable
+                    cell.style.cursor = 'pointer';
+                    cell.addEventListener('click', () => {
+                        showDayDetails(dateStr, dayLogs);
+                    });
+
+                    gridDiv.appendChild(cell);
+                }
+
+                monthDiv.appendChild(gridDiv);
+                container.appendChild(monthDiv);
+            });
+        }
+
+        // ============================================
+        // CALENDAR MODAL FUNCTIONS
+        // ============================================
+        function showDayDetails(dateStr, dayLogs) {
+            const date = new Date(dateStr);
+            const dateFormatted = date.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
             });
 
-            dayEl.onclick = () => openModal(dateStr);
-            container.appendChild(dayEl);
+            document.getElementById('dayModalTitle').textContent = dateFormatted;
+            
+            const bodyEl = document.getElementById('dayModalBody');
+            bodyEl.innerHTML = '';
+
+            if (dayLogs.length === 0) {
+                bodyEl.innerHTML = '<div class="day-no-data">No exercises logged on this day</div>';
+            } else {
+                const exercises = ['pushups', 'situps', 'crawls'];
+                exercises.forEach(exercise => {
+                    const log = dayLogs.find(l => l.exercise === exercise);
+                    const reps = log ? log.reps : 0;
+                    const isComplete = reps >= GOAL;
+
+                    const resultDiv = document.createElement('div');
+                    resultDiv.className = `day-exercise-result ${isComplete ? 'complete' : 'incomplete'}`;
+                    resultDiv.innerHTML = `
+                        <div class="exercise-title">${exercise}</div>
+                        <div class="exercise-reps">${reps} / ${GOAL}</div>
+                    `;
+                    bodyEl.appendChild(resultDiv);
+                });
+            }
+
+            document.getElementById('dayModal').classList.remove('hidden');
         }
-    }
 
-    function openModal(date) {
-        selectedDate = date;
-        const data = fitnessData[currentUser][date] || { pushups: 0, situps: 0, crawls: 0 };
-        document.getElementById('modal-date-title').innerText = `Log for ${date}`;
-        document.getElementById('input-pushups').value = data.pushups || 0;
-        document.getElementById('input-situps').value = data.situps || 0;
-        document.getElementById('input-crawls').value = data.crawls || 0;
-        document.getElementById('modal').style.display = 'block';
-        document.getElementById('overlay').style.display = 'block';
-    }
+        function closeDayModal() {
+            document.getElementById('dayModal').classList.add('hidden');
+        }
 
-    function closeModal() {
-        document.getElementById('modal').style.display = 'none';
-        document.getElementById('overlay').style.display = 'none';
-    }
+        // Close modal when clicking outside
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('dayModal');
+            if (event.target === modal) {
+                closeDayModal();
+            }
+        });
 
-    init();
-</script>
+        // ============================================
+        // EVENT HANDLERS
+        // ============================================
+        async function logExercise(exercise) {
+            const input = document.getElementById(`${exercise}-input`);
+            const reps = parseInt(input.value) || 0;
 
+            if (reps <= 0) {
+                showToast('Please enter a number greater than 0', 'error');
+                return;
+            }
+
+            const btn = event.target;
+            btn.classList.add('loading');
+
+            try {
+                const date = getTodayKey();
+
+                // Update localStorage cache immediately (optimistic UI)
+                const cachedLogs = JSON.parse(localStorage.getItem(`logs_${currentUser}`) || '[]');
+                const existingIndex = cachedLogs.findIndex(l => l.date === date && l.exercise === exercise);
+                if (existingIndex >= 0) {
+                    cachedLogs[existingIndex].reps = reps;
+                } else {
+                    cachedLogs.push({ date, exercise, reps, user_id: currentUser, created_at: new Date().toISOString() });
+                }
+                localStorage.setItem(`logs_${currentUser}`, JSON.stringify(cachedLogs));
+
+                // FIX: Await the sync — no more fire-and-forget
+                const synced = await syncLog(currentUser, date, exercise, reps);
+
+                btn.classList.remove('loading');
+
+                if (synced) {
+                    showToast(`${exercise.charAt(0).toUpperCase() + exercise.slice(1)}: ${reps} reps saved`, 'success');
+                    // Reload from Supabase so UI reflects actual DB state
+                    await loadData();
+                } else {
+                    showToast('Saved locally — sync failed. Check connection.', 'error');
+                    updateUI(cachedLogs);
+                }
+            } catch (err) {
+                console.error('Error logging exercise:', err);
+                btn.classList.remove('loading');
+                showToast('Error saving exercise', 'error');
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // User selector
+        document.querySelectorAll('.user-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.user-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentUser = this.dataset.user;
+                // Load data from Supabase for the new user
+                loadData();
+            });
+        });
+
+        // Enter key to log
+        document.querySelectorAll('.reps-input').forEach(input => {
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const exercise = this.id.replace('-input', '');
+                    logExercise(exercise);
+                }
+            });
+        });
+
+        // FIX: On page load, fetch from Supabase (source of truth)
+        window.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('setupModal').classList.add('hidden');
+            loadData();
+
+            // Poll Supabase every 30s so all users see each other's updates live
+            setInterval(loadData, 30000);
+        });
+    </script>
 </body>
 </html>
