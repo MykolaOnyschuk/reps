@@ -815,19 +815,17 @@ CREATE POLICY "allow_public_update" ON logs
             try {
                 updateSyncStatus('syncing');
 
+                // Use UPSERT to handle existing records
                 const response = await fetch(
-                    `${SUPABASE_URL}/rest/v1/logs`,
+                    `${SUPABASE_URL}/rest/v1/logs?user_id=eq.${userId}&date=eq.${date}&exercise=eq.${exercise}`,
                     {
-                        method: 'POST',
+                        method: 'PATCH',
                         headers: {
                             'Content-Type': 'application/json',
                             'apikey': SUPABASE_KEY,
                             'Authorization': `Bearer ${SUPABASE_KEY}`
                         },
                         body: JSON.stringify({
-                            user_id: userId,
-                            date: date,
-                            exercise: exercise,
                             reps: reps
                         })
                     }
@@ -836,6 +834,34 @@ CREATE POLICY "allow_public_update" ON logs
                 if (response.ok) {
                     updateSyncStatus('synced');
                     return true;
+                } else if (response.status === 404) {
+                    // Record doesn't exist, create it
+                    const insertResponse = await fetch(
+                        `${SUPABASE_URL}/rest/v1/logs`,
+                        {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'apikey': SUPABASE_KEY,
+                                'Authorization': `Bearer ${SUPABASE_KEY}`
+                            },
+                            body: JSON.stringify({
+                                user_id: userId,
+                                date: date,
+                                exercise: exercise,
+                                reps: reps
+                            })
+                        }
+                    );
+                    
+                    if (insertResponse.ok) {
+                        updateSyncStatus('synced');
+                        return true;
+                    } else {
+                        console.error('Insert error:', await insertResponse.json());
+                        updateSyncStatus('error');
+                        return false;
+                    }
                 } else {
                     const error = await response.json();
                     console.error('Sync error:', error);
