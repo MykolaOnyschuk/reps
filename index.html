@@ -1075,7 +1075,8 @@ CREATE POLICY "allow_public_update" ON logs
             btn.classList.remove('loading');
             showToast(`${exercise.charAt(0).toUpperCase() + exercise.slice(1)}: ${reps} reps${synced ? '' : ' (saved locally)'}`, 'success');
 
-            loadData();
+            // Update UI immediately with the logs we just saved
+            updateUI(logs);
         }
 
         function showToast(message, type = 'success') {
