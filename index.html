@@ -461,41 +461,84 @@
             color: var(--accent);
         }
 
+        #calendar-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .calendar-month {
+            background: var(--primary);
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            border-radius: 0;
+        }
+
+        .calendar-month h3 {
+            text-align: center;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
         .calendar-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
+            grid-template-columns: repeat(7, 1fr);
             gap: 0.5rem;
         }
 
-        .day-cell {
+        .calendar-weekday {
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            padding: 0.5rem 0;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 0.5rem;
+        }
+
+        .calendar-day {
             aspect-ratio: 1;
-            background: var(--primary);
+            background: var(--secondary);
             border: 1px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.75rem;
+            font-size: 0.85rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
             color: var(--text-secondary);
+            position: relative;
         }
 
-        .day-cell:hover {
+        .calendar-day:hover {
             border-color: var(--accent);
         }
 
-        .day-cell.completed {
+        .calendar-day.other-month {
+            color: var(--text-secondary);
+            opacity: 0.3;
+        }
+
+        .calendar-day.completed {
             background: linear-gradient(135deg, var(--accent), var(--accent-alt));
             color: var(--primary);
             border-color: var(--accent);
             box-shadow: 0 0 15px rgba(0, 217, 255, 0.3);
         }
 
-        .day-cell.partial {
+        .calendar-day.partial {
             background: var(--warning);
             color: var(--primary);
             border-color: var(--warning);
+        }
+
+        .calendar-day.today {
+            border: 2px solid var(--accent);
         }
 
         /* Animations */
@@ -754,8 +797,8 @@ CREATE POLICY "allow_public_update" ON logs
             </div>
 
             <div class="calendar-section">
-                <h2>100-Day Calendar</h2>
-                <div class="calendar-grid" id="calendar"></div>
+                <h2>100-Day Calendar (April 18 - July 26)</h2>
+                <div id="calendar-container"></div>
             </div>
         </div>
     </div>
@@ -1010,33 +1053,87 @@ CREATE POLICY "allow_public_update" ON logs
         }
 
         function updateCalendar(logs) {
-            const calendar = document.getElementById('calendar');
-            calendar.innerHTML = '';
+            const container = document.getElementById('calendar-container');
+            container.innerHTML = '';
 
-            for (let i = 1; i <= TOTAL_DAYS; i++) {
-                const cell = document.createElement('div');
-                cell.className = 'day-cell';
-                cell.textContent = i;
+            // Challenge starts April 18, 2026 and runs for 100 days
+            const startDate = new Date(2026, 3, 18); // April 18, 2026
+            const endDate = new Date(2026, 6, 26); // July 26, 2026
 
-                const checkDate = new Date();
-                checkDate.setDate(checkDate.getDate() - (TOTAL_DAYS - i));
-                const dateStr = checkDate.toISOString().split('T')[0];
-                const dayLogs = logs.filter(l => l.date === dateStr);
+            // Generate 4 months: April, May, June, July
+            const months = [
+                { name: 'April', year: 2026, days: 30, startDay: 18 },
+                { name: 'May', year: 2026, days: 31, startDay: 1 },
+                { name: 'June', year: 2026, days: 30, startDay: 1 },
+                { name: 'July', year: 2026, days: 26, startDay: 1 }
+            ];
 
-                if (dayLogs.length > 0) {
-                    const allComplete = dayLogs.some(l => l.exercise === 'pushups' && l.reps >= GOAL) &&
-                                       dayLogs.some(l => l.exercise === 'situps' && l.reps >= GOAL) &&
-                                       dayLogs.some(l => l.exercise === 'crawls' && l.reps >= GOAL);
+            months.forEach(month => {
+                const monthDiv = document.createElement('div');
+                monthDiv.className = 'calendar-month';
 
-                    if (allComplete) {
-                        cell.classList.add('completed');
-                    } else {
-                        cell.classList.add('partial');
-                    }
+                const titleDiv = document.createElement('h3');
+                titleDiv.textContent = `${month.name} ${month.year}`;
+                monthDiv.appendChild(titleDiv);
+
+                const gridDiv = document.createElement('div');
+                gridDiv.className = 'calendar-grid';
+
+                // Weekday headers
+                const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                weekdays.forEach(day => {
+                    const dayHeader = document.createElement('div');
+                    dayHeader.className = 'calendar-weekday';
+                    dayHeader.textContent = day;
+                    gridDiv.appendChild(dayHeader);
+                });
+
+                // Get first day of month
+                const firstDay = new Date(month.year, months.indexOf(month), 1);
+                const startingDayOfWeek = firstDay.getDay();
+
+                // Add empty cells for days before month starts
+                for (let i = 0; i < startingDayOfWeek; i++) {
+                    const emptyCell = document.createElement('div');
+                    emptyCell.className = 'calendar-day other-month';
+                    gridDiv.appendChild(emptyCell);
                 }
 
-                calendar.appendChild(cell);
-            }
+                // Add days of month
+                for (let day = month.startDay; day <= month.days; day++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'calendar-day';
+                    cell.textContent = day;
+
+                    // Check if this is today
+                    const today = new Date();
+                    const cellDate = new Date(month.year, months.indexOf(month), day);
+                    if (cellDate.toDateString() === today.toDateString()) {
+                        cell.classList.add('today');
+                    }
+
+                    // Check logs for this date
+                    const dateStr = cellDate.toISOString().split('T')[0];
+                    const dayLogs = logs.filter(l => l.date === dateStr);
+
+                    if (dayLogs.length > 0) {
+                        const allComplete = dayLogs.some(l => l.exercise === 'pushups' && l.reps >= GOAL) &&
+                                           dayLogs.some(l => l.exercise === 'situps' && l.reps >= GOAL) &&
+                                           dayLogs.some(l => l.exercise === 'crawls' && l.reps >= GOAL);
+
+                        if (allComplete) {
+                            cell.classList.add('completed');
+                        } else {
+                            cell.classList.add('partial');
+                        }
+                    }
+
+                    gridDiv.appendChild(cell);
+                }
+
+                monthDiv.appendChild(gridDiv);
+                container.appendChild(monthDiv);
+            });
         }
 
         // ============================================
