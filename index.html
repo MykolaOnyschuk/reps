@@ -212,35 +212,25 @@
             background: var(--secondary);
             color: var(--text-secondary);
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
             font-family: 'Courier New', monospace;
             font-size: 1rem;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 1px;
-            position: relative;
-            overflow: hidden;
         }
 
-        .user-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: var(--accent);
-            z-index: -1;
-            transition: left 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        .user-btn:hover {
+        /* Hover: keep text on a visibly lighter surface (old ::before sat behind opaque bg, so black text looked “invisible”) */
+        .user-btn:hover:not(.active) {
             border-color: var(--accent);
-            color: var(--primary);
+            color: var(--accent);
+            background: rgba(0, 217, 255, 0.12);
+            box-shadow: 0 0 20px rgba(0, 217, 255, 0.2);
         }
 
-        .user-btn:hover::before {
-            left: 0;
+        .user-btn:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 3px;
         }
 
         .user-btn.active {
@@ -248,6 +238,12 @@
             color: var(--primary);
             border-color: var(--accent);
             box-shadow: 0 0 30px rgba(0, 217, 255, 0.5);
+        }
+
+        .user-btn.active:hover {
+            background: #33e1ff;
+            color: var(--primary);
+            border-color: #33e1ff;
         }
 
         .user-icon {
@@ -547,6 +543,13 @@
             background: var(--warning);
             color: var(--primary);
             border-color: var(--warning);
+        }
+
+        /* Current calendar date (same logic as getTodayKey / stored log dates) */
+        .calendar-day.today {
+            outline: 3px solid #ffffff;
+            outline-offset: -3px;
+            z-index: 2;
         }
 
         .day-modal {
@@ -1428,33 +1431,44 @@ CREATE POLICY "allow_public_update" ON logs
                     gridDiv.appendChild(emptyCell);
                 }
 
+                const todayKey = getTodayKey();
+
                 for (let day = month.startDay; day <= month.days; day++) {
                     const cell = document.createElement('div');
                     cell.className = 'calendar-day';
                     cell.textContent = day;
 
-                    const today = new Date();
                     const cellDate = new Date(month.year, month.monthIndex, day);
-                    if (cellDate.toDateString() === today.toDateString()) {
-                        cell.classList.add('today');
-                    }
-
                     const dateStr = formatLocalDateKey(cellDate);
                     const dayLogs = logs.filter(l => l.date === dateStr);
 
-                    if (dayLogs.length > 0) {
-                        const allComplete = dayLogs.some(l => normalizeExercise(l.exercise) === 'pushups' && l.reps >= GOAL) &&
-                                           dayLogs.some(l => normalizeExercise(l.exercise) === 'situps' && l.reps >= GOAL) &&
-                                           dayLogs.some(l => normalizeExercise(l.exercise) === 'crawls' && l.reps >= GOAL);
-
-                        if (allComplete) {
-                            cell.classList.add('completed');
-                        } else {
-                            cell.classList.add('partial');
-                        }
+                    if (dateStr === todayKey) {
+                        cell.classList.add('today');
                     }
 
-                    // Make day clickable
+                    let allComplete = false;
+                    if (dayLogs.length > 0) {
+                        allComplete =
+                            dayLogs.some(l => normalizeExercise(l.exercise) === 'pushups' && l.reps >= GOAL) &&
+                            dayLogs.some(l => normalizeExercise(l.exercise) === 'situps' && l.reps >= GOAL) &&
+                            dayLogs.some(l => normalizeExercise(l.exercise) === 'crawls' && l.reps >= GOAL);
+                        cell.classList.add(allComplete ? 'completed' : 'partial');
+                    }
+
+                    const parts = dateStr.split('-');
+                    const nice = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                    });
+                    if (dateStr === todayKey) {
+                        cell.title = `${nice} — Today`;
+                    } else if (dayLogs.length > 0) {
+                        cell.title = allComplete ? `${nice} — All goals met (100 each)` : `${nice} — Logged (in progress)`;
+                    } else {
+                        cell.title = nice;
+                    }
+
                     cell.style.cursor = 'pointer';
                     cell.addEventListener('click', () => {
                         showDayDetails(dateStr, dayLogs);
@@ -1712,11 +1726,16 @@ CREATE POLICY "allow_public_update" ON logs
 
         async function logExercise(exercise, triggerEl) {
             const input = document.getElementById(`${exercise}-input`);
-            const reps = parseInt(input.value, 10) || 0;
+            const raw = String(input.value ?? '').trim();
             const ex = normalizeExercise(exercise);
 
-            if (reps <= 0) {
-                showToast('Please enter a number greater than 0', 'error');
+            if (raw === '') {
+                showToast('Enter a number (0 or more)', 'error');
+                return;
+            }
+            const reps = parseInt(raw, 10);
+            if (Number.isNaN(reps) || reps < 0) {
+                showToast('Enter a valid number (0 or more)', 'error');
                 return;
             }
 
