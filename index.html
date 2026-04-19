@@ -1122,8 +1122,16 @@ CREATE POLICY "allow_public_update" ON logs
         // ============================================
         // UTILITIES
         // ============================================
+        /** YYYY-MM-DD in local time (toISOString() uses UTC and can shift the calendar day). */
+        function formatLocalDateKey(d) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
         function getTodayKey() {
-            return new Date().toISOString().split('T')[0];
+            return formatLocalDateKey(new Date());
         }
 
         function getTodayData(logs) {
@@ -1131,7 +1139,8 @@ CREATE POLICY "allow_public_update" ON logs
             const data = { pushups: 0, situps: 0, crawls: 0 };
             logs.forEach(log => {
                 if (log.date === today) {
-                    data[log.exercise] = log.reps;
+                    const ex = normalizeExercise(log.exercise);
+                    if (ex in data) data[ex] = log.reps;
                 }
             });
             return data;
@@ -1204,11 +1213,11 @@ CREATE POLICY "allow_public_update" ON logs
             let streak = 0;
             let checkDate = new Date();
             for (let i = 0; i < TOTAL_DAYS; i++) {
-                const dateStr = checkDate.toISOString().split('T')[0];
+                const dateStr = formatLocalDateKey(checkDate);
                 const dayLogs = logs.filter(l => l.date === dateStr);
-                const completed = dayLogs.some(l => l.exercise === 'pushups' && l.reps > 0) &&
-                                dayLogs.some(l => l.exercise === 'situps' && l.reps > 0) &&
-                                dayLogs.some(l => l.exercise === 'crawls' && l.reps > 0);
+                const completed = dayLogs.some(l => normalizeExercise(l.exercise) === 'pushups' && l.reps > 0) &&
+                                dayLogs.some(l => normalizeExercise(l.exercise) === 'situps' && l.reps > 0) &&
+                                dayLogs.some(l => normalizeExercise(l.exercise) === 'crawls' && l.reps > 0);
                 if (completed) {
                     streak++;
                     checkDate.setDate(checkDate.getDate() - 1);
@@ -1223,16 +1232,12 @@ CREATE POLICY "allow_public_update" ON logs
             const container = document.getElementById('calendar-container');
             container.innerHTML = '';
 
-            // Challenge starts April 18, 2026 and runs for 100 days
-            const startDate = new Date(2026, 3, 18); // April 18, 2026
-            const endDate = new Date(2026, 6, 26); // July 26, 2026
-
-            // Generate 4 months: April, May, June, July
+            // monthIndex is JS Date month: 0=Jan … 3=April (do NOT use array index — that broke April as January).
             const months = [
-                { name: 'April', year: 2026, days: 30, startDay: 18 },
-                { name: 'May', year: 2026, days: 31, startDay: 1 },
-                { name: 'June', year: 2026, days: 30, startDay: 1 },
-                { name: 'July', year: 2026, days: 26, startDay: 1 }
+                { name: 'April', year: 2026, days: 30, startDay: 18, monthIndex: 3 },
+                { name: 'May', year: 2026, days: 31, startDay: 1, monthIndex: 4 },
+                { name: 'June', year: 2026, days: 30, startDay: 1, monthIndex: 5 },
+                { name: 'July', year: 2026, days: 26, startDay: 1, monthIndex: 6 }
             ];
 
             months.forEach(month => {
@@ -1255,38 +1260,34 @@ CREATE POLICY "allow_public_update" ON logs
                     gridDiv.appendChild(dayHeader);
                 });
 
-                // Get first day of month
-                const firstDay = new Date(month.year, months.indexOf(month), 1);
-                const startingDayOfWeek = firstDay.getDay();
+                // Align the first displayed day with the correct weekday column (April starts at 18).
+                const firstDisplayed = new Date(month.year, month.monthIndex, month.startDay);
+                const startingDayOfWeek = firstDisplayed.getDay();
 
-                // Add empty cells for days before month starts
                 for (let i = 0; i < startingDayOfWeek; i++) {
                     const emptyCell = document.createElement('div');
                     emptyCell.className = 'calendar-day other-month';
                     gridDiv.appendChild(emptyCell);
                 }
 
-                // Add days of month
                 for (let day = month.startDay; day <= month.days; day++) {
                     const cell = document.createElement('div');
                     cell.className = 'calendar-day';
                     cell.textContent = day;
 
-                    // Check if this is today
                     const today = new Date();
-                    const cellDate = new Date(month.year, months.indexOf(month), day);
+                    const cellDate = new Date(month.year, month.monthIndex, day);
                     if (cellDate.toDateString() === today.toDateString()) {
                         cell.classList.add('today');
                     }
 
-                    // Check logs for this date
-                    const dateStr = cellDate.toISOString().split('T')[0];
+                    const dateStr = formatLocalDateKey(cellDate);
                     const dayLogs = logs.filter(l => l.date === dateStr);
 
                     if (dayLogs.length > 0) {
-                        const allComplete = dayLogs.some(l => l.exercise === 'pushups' && l.reps >= GOAL) &&
-                                           dayLogs.some(l => l.exercise === 'situps' && l.reps >= GOAL) &&
-                                           dayLogs.some(l => l.exercise === 'crawls' && l.reps >= GOAL);
+                        const allComplete = dayLogs.some(l => normalizeExercise(l.exercise) === 'pushups' && l.reps >= GOAL) &&
+                                           dayLogs.some(l => normalizeExercise(l.exercise) === 'situps' && l.reps >= GOAL) &&
+                                           dayLogs.some(l => normalizeExercise(l.exercise) === 'crawls' && l.reps >= GOAL);
 
                         if (allComplete) {
                             cell.classList.add('completed');
@@ -1331,7 +1332,7 @@ CREATE POLICY "allow_public_update" ON logs
             } else {
                 const exercises = ['pushups', 'situps', 'crawls'];
                 exercises.forEach(exercise => {
-                    const log = dayLogs.find(l => l.exercise === exercise);
+                    const log = dayLogs.find(l => normalizeExercise(l.exercise) === exercise);
                     const reps = log ? log.reps : 0;
                     const isComplete = reps >= GOAL;
 
