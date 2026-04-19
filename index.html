@@ -977,7 +977,7 @@ CREATE POLICY "allow_public_update" ON logs
     <!-- Main App -->
     <div class="header">
         <h1>100-DAY CHALLENGE</h1>
-        <p>Pushups • Situps • Crawls</p>
+        <p>Pushups • Situps • Abs</p>
         <div class="sync-status" id="syncStatus">● Offline</div>
     </div>
 
@@ -1013,7 +1013,7 @@ CREATE POLICY "allow_public_update" ON logs
                         <div class="progress-fill" id="pushups-bar" style="width: 0%"></div>
                     </div>
                     <div class="input-group">
-                        <input type="number" class="reps-input" id="pushups-input" placeholder="Enter reps" min="0">
+                        <input type="number" class="reps-input" id="pushups-input" placeholder="Add reps" min="0" title="Adds to today’s total for this exercise">
                         <button type="button" class="btn-log" onclick="logExercise('pushups', this)">Log</button>
                     </div>
                 </div>
@@ -1030,25 +1030,25 @@ CREATE POLICY "allow_public_update" ON logs
                         <div class="progress-fill" id="situps-bar" style="width: 0%"></div>
                     </div>
                     <div class="input-group">
-                        <input type="number" class="reps-input" id="situps-input" placeholder="Enter reps" min="0">
+                        <input type="number" class="reps-input" id="situps-input" placeholder="Add reps" min="0" title="Adds to today’s total for this exercise">
                         <button type="button" class="btn-log" onclick="logExercise('situps', this)">Log</button>
                     </div>
                 </div>
 
                 <div class="exercise-group">
                     <div class="exercise-label">
-                        <span class="exercise-name">Crawls</span>
+                        <span class="exercise-name">Abs</span>
                         <span class="exercise-progress">
-                            <span class="exercise-count" id="crawls-count">0</span>
+                            <span class="exercise-count" id="abs-count">0</span>
                             <span style="color: var(--text-secondary);">/ 100</span>
                         </span>
                     </div>
                     <div class="progress-bar">
-                        <div class="progress-fill" id="crawls-bar" style="width: 0%"></div>
+                        <div class="progress-fill" id="abs-bar" style="width: 0%"></div>
                     </div>
                     <div class="input-group">
-                        <input type="number" class="reps-input" id="crawls-input" placeholder="Enter reps" min="0">
-                        <button type="button" class="btn-log" onclick="logExercise('crawls', this)">Log</button>
+                        <input type="number" class="reps-input" id="abs-input" placeholder="Add reps" min="0" title="Adds to today’s total for this exercise">
+                        <button type="button" class="btn-log" onclick="logExercise('abs', this)">Log</button>
                     </div>
                 </div>
             </div>
@@ -1064,8 +1064,8 @@ CREATE POLICY "allow_public_update" ON logs
                     <span class="stat-value" id="stat-situps">0%</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-label">Crawls</span>
-                    <span class="stat-value" id="stat-crawls">0%</span>
+                    <span class="stat-label">Abs</span>
+                    <span class="stat-value" id="stat-abs">0%</span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-label">Day Streak</span>
@@ -1153,7 +1153,15 @@ CREATE POLICY "allow_public_update" ON logs
         // Upsert: UNIQUE(user_id, date, exercise) + Prefer: resolution=merge-duplicates.
         // SQL if missing: ALTER TABLE logs ADD CONSTRAINT logs_user_date_exercise_key UNIQUE (user_id, date, exercise);
         function normalizeExercise(ex) {
-            return String(ex || '').toLowerCase().trim();
+            let n = String(ex || '').toLowerCase().trim();
+            if (n === 'crawls') n = 'abs'; /* legacy DB / old logs */
+            return n;
+        }
+
+        function exerciseDisplayName(ex) {
+            const n = normalizeExercise(ex);
+            const labels = { pushups: 'Pushups', situps: 'Situps', abs: 'Abs' };
+            return labels[n] || (n.charAt(0).toUpperCase() + n.slice(1));
         }
 
         async function syncLog(userId, date, exercise, reps) {
@@ -1298,7 +1306,7 @@ CREATE POLICY "allow_public_update" ON logs
 
         function getTodayData(logs) {
             const today = getTodayKey();
-            const data = { pushups: 0, situps: 0, crawls: 0 };
+            const data = { pushups: 0, situps: 0, abs: 0 };
             logs.forEach(log => {
                 if (log.date === today) {
                     const ex = normalizeExercise(log.exercise);
@@ -1336,13 +1344,13 @@ CREATE POLICY "allow_public_update" ON logs
 
             updateExerciseUI('pushups', today.pushups);
             updateExerciseUI('situps', today.situps);
-            updateExerciseUI('crawls', today.crawls);
+            updateExerciseUI('abs', today.abs);
             updateStats(today, logs);
             updateCalendar(logs);
 
             document.getElementById('pushups-input').value = '';
             document.getElementById('situps-input').value = '';
-            document.getElementById('crawls-input').value = '';
+            document.getElementById('abs-input').value = '';
         }
 
         function updateExerciseUI(exercise, reps) {
@@ -1365,8 +1373,8 @@ CREATE POLICY "allow_public_update" ON logs
                 Math.min(Math.round((today.pushups / GOAL) * 100), 100) + '%';
             document.getElementById('stat-situps').textContent = 
                 Math.min(Math.round((today.situps / GOAL) * 100), 100) + '%';
-            document.getElementById('stat-crawls').textContent = 
-                Math.min(Math.round((today.crawls / GOAL) * 100), 100) + '%';
+            document.getElementById('stat-abs').textContent = 
+                Math.min(Math.round((today.abs / GOAL) * 100), 100) + '%';
 
             const uniqueDates = new Set(logs.map(l => l.date));
             document.getElementById('stat-days').textContent = uniqueDates.size;
@@ -1379,7 +1387,7 @@ CREATE POLICY "allow_public_update" ON logs
                 const dayLogs = logs.filter(l => l.date === dateStr);
                 const completed = dayLogs.some(l => normalizeExercise(l.exercise) === 'pushups' && l.reps > 0) &&
                                 dayLogs.some(l => normalizeExercise(l.exercise) === 'situps' && l.reps > 0) &&
-                                dayLogs.some(l => normalizeExercise(l.exercise) === 'crawls' && l.reps > 0);
+                                dayLogs.some(l => normalizeExercise(l.exercise) === 'abs' && l.reps > 0);
                 if (completed) {
                     streak++;
                     checkDate.setDate(checkDate.getDate() - 1);
@@ -1453,7 +1461,7 @@ CREATE POLICY "allow_public_update" ON logs
                         allComplete =
                             dayLogs.some(l => normalizeExercise(l.exercise) === 'pushups' && l.reps >= GOAL) &&
                             dayLogs.some(l => normalizeExercise(l.exercise) === 'situps' && l.reps >= GOAL) &&
-                            dayLogs.some(l => normalizeExercise(l.exercise) === 'crawls' && l.reps >= GOAL);
+                            dayLogs.some(l => normalizeExercise(l.exercise) === 'abs' && l.reps >= GOAL);
                         cell.classList.add(allComplete ? 'completed' : 'partial');
                     }
 
@@ -1513,7 +1521,7 @@ CREATE POLICY "allow_public_update" ON logs
             hint.textContent = `Editing as ${currentUser} · tap Save per exercise or Save all`;
             bodyEl.appendChild(hint);
 
-            const exercises = ['pushups', 'situps', 'crawls'];
+            const exercises = ['pushups', 'situps', 'abs'];
             exercises.forEach(exercise => {
                 const log = dayLogs.find(l => normalizeExercise(l.exercise) === exercise);
                 const reps = log != null ? Number(log.reps) : 0;
@@ -1526,7 +1534,7 @@ CREATE POLICY "allow_public_update" ON logs
                 label.className = 'day-modal-exercise-label';
                 const nameSpan = document.createElement('span');
                 nameSpan.className = 'day-modal-exercise-name';
-                nameSpan.textContent = exercise;
+                nameSpan.textContent = exerciseDisplayName(exercise);
                 const goalSpan = document.createElement('span');
                 goalSpan.className = 'day-modal-goal-hint';
                 goalSpan.textContent = ` / ${GOAL}`;
@@ -1543,7 +1551,7 @@ CREATE POLICY "allow_public_update" ON logs
                 input.className = 'day-modal-reps-input';
                 input.dataset.exercise = exercise;
                 input.value = String(reps);
-                input.setAttribute('aria-label', `${exercise} reps for ${dateStr}`);
+                input.setAttribute('aria-label', `${exerciseDisplayName(exercise)} reps for ${dateStr}`);
 
                 const btn = document.createElement('button');
                 btn.type = 'button';
@@ -1637,7 +1645,7 @@ CREATE POLICY "allow_public_update" ON logs
         async function saveAllDayExercisesFromModal(dateStr) {
             const bodyEl = document.getElementById('dayModalBody');
             const saveAllBtn = bodyEl.querySelector('.btn-modal-save-all');
-            const exercises = ['pushups', 'situps', 'crawls'];
+            const exercises = ['pushups', 'situps', 'abs'];
 
             for (const exercise of exercises) {
                 const input = bodyEl.querySelector(`.day-modal-reps-input[data-exercise="${exercise}"]`);
@@ -1735,8 +1743,8 @@ CREATE POLICY "allow_public_update" ON logs
                 showToast('Enter a number (0 or more)', 'error');
                 return;
             }
-            const reps = parseInt(raw, 10);
-            if (Number.isNaN(reps) || reps < 0) {
+            const delta = parseInt(raw, 10);
+            if (Number.isNaN(delta) || delta < 0) {
                 showToast('Enter a valid number (0 or more)', 'error');
                 return;
             }
@@ -1750,6 +1758,9 @@ CREATE POLICY "allow_public_update" ON logs
                 // Optimistic cache (backup if offline)
                 const cachedLogs = JSON.parse(localStorage.getItem(`logs_${currentUser}`) || '[]');
                 const existingIndex = cachedLogs.findIndex(l => l.date === date && normalizeExercise(l.exercise) === ex);
+                const previousReps = existingIndex >= 0 ? Number(cachedLogs[existingIndex].reps) || 0 : 0;
+                const reps = previousReps + delta;
+
                 if (existingIndex >= 0) {
                     cachedLogs[existingIndex].reps = reps;
                     cachedLogs[existingIndex].exercise = ex;
@@ -1763,7 +1774,12 @@ CREATE POLICY "allow_public_update" ON logs
                 if (btn) btn.classList.remove('loading');
 
                 if (synced) {
-                    showToast(`${ex.charAt(0).toUpperCase() + ex.slice(1)}: ${reps} reps saved`, 'success');
+                    const label = exerciseDisplayName(ex);
+                    const toastMsg =
+                        delta === 0
+                            ? `${label}: ${reps} total`
+                            : `${label}: ${reps} total (+${delta} this log)`;
+                    showToast(toastMsg, 'success');
                     await loadData();
                 } else {
                     showToast('Saved locally — sync failed. Check connection.', 'error');
