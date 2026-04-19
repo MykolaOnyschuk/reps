@@ -86,6 +86,11 @@
             color: var(--accent);
         }
 
+        .sync-status.offline {
+            border-color: var(--warning);
+            color: var(--warning);
+        }
+
         /* Container */
         .container {
             max-width: 1400px;
@@ -241,16 +246,9 @@
         }
 
         .user-btn.active {
-            background: var(--accent);
-            color: var(--primary);
             border-color: var(--accent);
-            box-shadow: 0 0 30px rgba(0, 217, 255, 0.5);
-        }
-
-        .user-icon {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-            display: block;
+            color: var(--primary);
+            background: var(--accent);
         }
 
         /* Main Content */
@@ -261,24 +259,29 @@
             animation: fadeIn 0.8s 0.4s both;
         }
 
-        /* Log Card */
-        .log-card {
+        @media (max-width: 1024px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Exercise Section */
+        .exercise-section {
             background: var(--secondary);
             border: 2px solid var(--border);
             padding: 2rem;
             transition: all 0.3s ease;
         }
 
-        .log-card:hover {
+        .exercise-section:hover {
             border-color: var(--accent);
-            box-shadow: 0 0 20px rgba(0, 217, 255, 0.1);
         }
 
-        .log-card h2 {
-            font-size: 1.2rem;
+        .exercise-section h2 {
+            font-size: 1.3rem;
             margin-bottom: 1.5rem;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
             color: var(--accent);
         }
 
@@ -289,90 +292,64 @@
         .exercise-label {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.8rem;
-        }
-
-        .exercise-name {
-            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 1px;
-            font-size: 0.95rem;
-        }
-
-        .exercise-progress {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
         }
 
         .exercise-count {
-            color: var(--accent);
             font-weight: 700;
-            font-size: 1.1rem;
+            color: var(--text-secondary);
         }
 
         .exercise-count.complete {
             color: var(--success);
+            font-weight: 700;
         }
 
         .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: var(--border);
+            background: var(--primary);
+            border: 1px solid var(--border);
+            height: 20px;
             margin-bottom: 1rem;
             overflow: hidden;
-            position: relative;
         }
 
         .progress-fill {
             height: 100%;
             background: linear-gradient(90deg, var(--accent), var(--accent-alt));
-            transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            position: relative;
-        }
-
-        .progress-fill::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            animation: shimmer 2s infinite;
-        }
-
-        @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-        }
-
-        .input-group {
+            transition: width 0.3s ease;
             display: flex;
-            gap: 0.8rem;
             align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: var(--primary);
+            font-weight: 700;
         }
 
         .reps-input {
-            flex: 1;
+            width: 100%;
             padding: 0.8rem;
             background: var(--primary);
             border: 2px solid var(--border);
-            color: var(--text-primary);
+            color: var(--accent);
             font-family: 'Courier New', monospace;
             font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
             transition: all 0.3s ease;
         }
 
         .reps-input:focus {
             outline: none;
             border-color: var(--accent);
-            box-shadow: 0 0 15px rgba(0, 217, 255, 0.2);
+            box-shadow: 0 0 10px rgba(0, 217, 255, 0.3);
         }
 
         .btn-log {
-            padding: 0.8rem 1.5rem;
+            width: 100%;
+            padding: 0.8rem;
             background: var(--accent);
             color: var(--primary);
             border: none;
@@ -381,67 +358,50 @@
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1px;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            font-size: 0.9rem;
-            position: relative;
+            transition: all 0.3s ease;
+            margin-bottom: 1.5rem;
         }
 
         .btn-log:hover {
-            box-shadow: 0 0 20px rgba(0, 217, 255, 0.6);
-            transform: translateY(-2px);
-        }
-
-        .btn-log:active {
-            transform: translateY(0);
+            box-shadow: 0 0 15px rgba(0, 217, 255, 0.6);
         }
 
         .btn-log.loading {
             opacity: 0.6;
-            pointer-events: none;
+            cursor: not-allowed;
         }
 
-        /* Stats Card */
-        .stats-card {
+        /* Statistics */
+        .stats-section {
             background: var(--secondary);
             border: 2px solid var(--border);
             padding: 2rem;
-        }
-
-        .stats-card h2 {
-            font-size: 1.2rem;
-            margin-bottom: 2rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: var(--accent);
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
         }
 
         .stat-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem 0;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .stat-item:last-child {
-            border-bottom: none;
+            text-align: center;
+            padding: 1rem;
+            background: var(--primary);
+            border: 1px solid var(--border);
         }
 
         .stat-label {
+            display: block;
+            font-size: 0.8rem;
             text-transform: uppercase;
-            font-size: 0.85rem;
             letter-spacing: 1px;
             color: var(--text-secondary);
+            margin-bottom: 0.5rem;
         }
 
         .stat-value {
+            display: block;
             font-size: 1.8rem;
             font-weight: 700;
             color: var(--accent);
-        }
-
-        .stat-value.complete {
-            color: var(--success);
         }
 
         /* Calendar */
@@ -450,35 +410,23 @@
             background: var(--secondary);
             border: 2px solid var(--border);
             padding: 2rem;
-            animation: fadeIn 0.8s 0.6s both;
         }
 
         .calendar-section h2 {
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             margin-bottom: 2rem;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
             color: var(--accent);
-        }
-
-        #calendar-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 2rem;
         }
 
         .calendar-month {
-            background: var(--primary);
-            border: 1px solid var(--border);
-            padding: 1.5rem;
-            border-radius: 0;
+            margin-bottom: 3rem;
         }
 
         .calendar-month h3 {
-            text-align: center;
             font-size: 1.1rem;
             margin-bottom: 1rem;
-            color: var(--accent);
             text-transform: uppercase;
             letter-spacing: 1px;
         }
@@ -492,27 +440,24 @@
         .calendar-weekday {
             text-align: center;
             font-size: 0.75rem;
-            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
             color: var(--text-secondary);
             padding: 0.5rem 0;
-            text-transform: uppercase;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 0.5rem;
+            font-weight: 700;
         }
 
         .calendar-day {
             aspect-ratio: 1;
-            background: var(--secondary);
-            border: 1px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.85rem;
+            background: var(--primary);
+            border: 1px solid var(--border);
+            font-size: 0.9rem;
             font-weight: 600;
+            transition: all 0.3s ease;
             cursor: pointer;
-            transition: all 0.2s ease;
-            color: var(--text-secondary);
-            position: relative;
         }
 
         .calendar-day:hover {
@@ -521,22 +466,28 @@
 
         .calendar-day.other-month {
             color: var(--text-secondary);
-            opacity: 0.3;
+            opacity: 0.5;
+            cursor: default;
+        }
+
+        .calendar-day.today {
+            border-color: var(--accent);
+            background: rgba(0, 217, 255, 0.1);
         }
 
         .calendar-day.completed {
-            background: linear-gradient(135deg, var(--accent), var(--accent-alt));
-            color: var(--primary);
-            border-color: var(--accent);
-            box-shadow: 0 0 15px rgba(0, 217, 255, 0.3);
+            background: rgba(0, 255, 65, 0.2);
+            border-color: var(--success);
+            color: var(--success);
         }
 
         .calendar-day.partial {
-            background: var(--warning);
-            color: var(--primary);
+            background: rgba(255, 165, 0, 0.2);
             border-color: var(--warning);
+            color: var(--warning);
         }
 
+        /* Day Modal */
         .day-modal {
             position: fixed;
             top: 0;
@@ -547,7 +498,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 1500;
+            z-index: 1000;
             backdrop-filter: blur(5px);
         }
 
@@ -562,78 +513,47 @@
             max-width: 500px;
             max-height: 80vh;
             overflow-y: auto;
-            animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
-        .day-modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .day-modal-content h2 {
+            color: var(--accent);
             margin-bottom: 1.5rem;
-            border-bottom: 2px solid var(--border);
-            padding-bottom: 1rem;
-        }
-
-        .day-modal-header h2 {
-            color: var(--accent);
             font-size: 1.3rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin: 0;
         }
 
-        .day-modal-close {
-            background: none;
-            border: none;
-            color: var(--text-primary);
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 0;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-        }
-
-        .day-modal-close:hover {
-            color: var(--accent);
-        }
-
-        .day-modal-body {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
+        .day-no-data {
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 2rem;
         }
 
         .day-exercise-result {
-            background: var(--primary);
-            border-left: 3px solid var(--accent);
+            display: flex;
+            justify-content: space-between;
             padding: 1rem;
-            border-radius: 0;
+            margin-bottom: 1rem;
+            background: var(--primary);
+            border: 2px solid var(--border);
+            align-items: center;
         }
 
         .day-exercise-result.complete {
-            border-left-color: var(--success);
-            background: rgba(0, 255, 65, 0.1);
+            border-color: var(--success);
         }
 
         .day-exercise-result.incomplete {
-            border-left-color: var(--warning);
-            background: rgba(255, 165, 0, 0.1);
+            border-color: var(--warning);
         }
 
-        .day-exercise-result .exercise-title {
-            font-weight: 600;
+        .exercise-title {
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 0.5rem;
-            font-size: 0.95rem;
+            font-weight: 600;
         }
 
-        .day-exercise-result .exercise-reps {
-            font-size: 1.5rem;
+        .exercise-reps {
+            font-size: 1.2rem;
             font-weight: 700;
             color: var(--accent);
         }
@@ -642,10 +562,8 @@
             color: var(--success);
         }
 
-        .day-no-data {
-            text-align: center;
-            padding: 2rem 1rem;
-            color: var(--text-secondary);
+        .day-exercise-result.incomplete .exercise-reps {
+            color: var(--warning);
         }
 
         /* Animations */
@@ -674,225 +592,151 @@
         @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: translateY(20px);
             }
             to {
                 opacity: 1;
-                transform: translateY(0);
             }
         }
 
-        /* Toast */
+        /* Toast notifications */
         .toast {
             position: fixed;
             bottom: 2rem;
             right: 2rem;
-            padding: 1rem 1.5rem;
-            border-radius: 0;
-            border: 2px solid;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            z-index: 1000;
+            padding: 1rem 2rem;
+            background: var(--secondary);
+            border: 2px solid var(--border);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            z-index: 3000;
+            animation: slideUp 0.3s ease;
         }
 
         .toast.success {
-            background: var(--success);
-            color: var(--primary);
             border-color: var(--success);
+            color: var(--success);
         }
 
         .toast.error {
-            background: var(--error);
-            color: var(--text-primary);
             border-color: var(--error);
+            color: var(--error);
         }
 
-        /* Responsive */
-        @media (max-width: 1024px) {
-            .content {
-                grid-template-columns: 1fr;
-            }
-
-            .header h1 {
-                font-size: 2rem;
-            }
-
-            .calendar-grid {
-                grid-template-columns: repeat(10, 1fr);
-            }
+        .toast.info {
+            border-color: var(--accent);
+            color: var(--accent);
         }
 
-        @media (max-width: 640px) {
-            .container {
-                padding: 1rem;
-            }
+        /* Offline queue indicator */
+        .offline-queue-indicator {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            padding: 0.8rem 1.5rem;
+            background: var(--secondary);
+            border: 2px solid var(--warning);
+            color: var(--warning);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: none;
+            z-index: 2900;
+        }
 
-            .header h1 {
-                font-size: 1.5rem;
-            }
-
-            .user-selector {
-                grid-template-columns: 1fr;
-            }
-
-            .calendar-grid {
-                grid-template-columns: repeat(7, 1fr);
-            }
+        .offline-queue-indicator.show {
+            display: block;
         }
     </style>
 </head>
 <body>
+    <!-- Header -->
+    <div class="header">
+        <h1>⚡ 100-DAY CHALLENGE</h1>
+        <p>Shared Team Tracker</p>
+        <div id="syncStatus" class="sync-status">● Initializing...</div>
+    </div>
+
     <!-- Setup Modal -->
-    <div class="setup-modal" id="setupModal">
+    <div id="setupModal" class="setup-modal">
         <div class="setup-content">
-            <h2>Setup Supabase Sync</h2>
+            <h2>Supabase Setup</h2>
             <div class="setup-instructions">
-                <strong>Quick Setup Steps:</strong><br><br>
-                1. Go to <a href="https://supabase.com" target="_blank">supabase.com</a> and create a free account<br>
-                2. Create a new project<br>
-                3. Go to <strong>SQL Editor</strong> and run this:<br><br>
-                <code style="background: #0f0f0f; display: block; padding: 1rem; margin: 0.5rem 0; border-left: 2px solid #00d9ff; overflow-x: auto;">
-CREATE TABLE logs (
-  id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-  user_id TEXT NOT NULL,
-  date DATE NOT NULL,
-  exercise TEXT NOT NULL,
-  reps INT NOT NULL,
-  created_at TIMESTAMP DEFAULT NOW(),
-  UNIQUE(user_id, date, exercise)
-);
-
-ALTER TABLE logs ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "allow_public_insert" ON logs
-  FOR INSERT WITH CHECK (true);
-
-CREATE POLICY "allow_public_select" ON logs
-  FOR SELECT USING (true);
-
-CREATE POLICY "allow_public_update" ON logs
-  FOR UPDATE USING (true);
-                </code>
-                4. Go to <strong>Settings → API</strong> and copy your Project URL and Anon Key
+                Your Supabase credentials are already configured. If you need to update them:
             </div>
-
             <div class="setup-field">
-                <label for="supabaseUrl">Project URL</label>
-                <input 
-                    type="text" 
-                    id="supabaseUrl" 
-                    placeholder="https://xxxxx.supabase.co"
-                >
+                <label>Project URL</label>
+                <input type="text" id="supabaseUrl" placeholder="https://xxxx.supabase.co" value="https://tzpobmqqcywoswqkmjtw.supabase.co">
             </div>
-
             <div class="setup-field">
-                <label for="supabaseKey">Anon Key</label>
-                <input 
-                    type="password" 
-                    id="supabaseKey" 
-                    placeholder="eyJhbGc..."
-                >
+                <label>Anon Key</label>
+                <input type="password" id="supabaseKey" placeholder="eyJ...">
             </div>
-
             <button class="btn-setup" onclick="saveSetup()">Save & Continue</button>
         </div>
     </div>
 
-    <!-- Day Detail Modal -->
-    <div class="day-modal hidden" id="dayModal">
+    <!-- Day Details Modal -->
+    <div id="dayModal" class="day-modal hidden">
         <div class="day-modal-content">
-            <div class="day-modal-header">
-                <h2 id="dayModalTitle"></h2>
-                <button class="day-modal-close" onclick="closeDayModal()">✕</button>
-            </div>
-            <div class="day-modal-body" id="dayModalBody">
-            </div>
+            <h2 id="dayModalTitle">Date</h2>
+            <div id="dayModalBody"></div>
         </div>
     </div>
 
-    <!-- Main App -->
-    <div class="header">
-        <h1>100-DAY CHALLENGE</h1>
-        <p>Pushups • Situps • Crawls</p>
-        <div class="sync-status" id="syncStatus">● Offline</div>
-    </div>
-
+    <!-- Main Content -->
     <div class="container">
+        <!-- User Selector -->
         <div class="user-selector">
-            <button class="user-btn active" data-user="oleg">
-                <span class="user-icon">💪</span>
-                Oleg
-            </button>
-            <button class="user-btn" data-user="slavic">
-                <span class="user-icon">🏋️</span>
-                Slavic
-            </button>
-            <button class="user-btn" data-user="kolya">
-                <span class="user-icon">🔥</span>
-                Kolya
-            </button>
+            <button class="user-btn active" data-user="oleg">Oleg</button>
+            <button class="user-btn" data-user="slavic">Slavic</button>
+            <button class="user-btn" data-user="kolya">Kolya</button>
         </div>
 
+        <!-- Content Grid -->
         <div class="content">
-            <div class="log-card">
-                <h2>Today's Log</h2>
-                
+            <!-- Exercise Logging -->
+            <div class="exercise-section">
+                <h2>Today's Workout</h2>
+
                 <div class="exercise-group">
                     <div class="exercise-label">
-                        <span class="exercise-name">Pushups</span>
-                        <span class="exercise-progress">
-                            <span class="exercise-count" id="pushups-count">0</span>
-                            <span style="color: var(--text-secondary);">/ 100</span>
-                        </span>
+                        <span>Pushups</span>
+                        <span class="exercise-count" id="pushups-count">0</span>
                     </div>
                     <div class="progress-bar">
                         <div class="progress-fill" id="pushups-bar" style="width: 0%"></div>
                     </div>
-                    <div class="input-group">
-                        <input type="number" class="reps-input" id="pushups-input" placeholder="Enter reps" min="0">
-                        <button class="btn-log" onclick="logExercise('pushups')">Log</button>
-                    </div>
+                    <input type="number" id="pushups-input" class="reps-input" placeholder="Enter reps..." min="0">
+                    <button class="btn-log" onclick="logExercise('pushups')">Log Pushups</button>
                 </div>
 
                 <div class="exercise-group">
                     <div class="exercise-label">
-                        <span class="exercise-name">Situps</span>
-                        <span class="exercise-progress">
-                            <span class="exercise-count" id="situps-count">0</span>
-                            <span style="color: var(--text-secondary);">/ 100</span>
-                        </span>
+                        <span>Situps</span>
+                        <span class="exercise-count" id="situps-count">0</span>
                     </div>
                     <div class="progress-bar">
                         <div class="progress-fill" id="situps-bar" style="width: 0%"></div>
                     </div>
-                    <div class="input-group">
-                        <input type="number" class="reps-input" id="situps-input" placeholder="Enter reps" min="0">
-                        <button class="btn-log" onclick="logExercise('situps')">Log</button>
-                    </div>
+                    <input type="number" id="situps-input" class="reps-input" placeholder="Enter reps..." min="0">
+                    <button class="btn-log" onclick="logExercise('situps')">Log Situps</button>
                 </div>
 
                 <div class="exercise-group">
                     <div class="exercise-label">
-                        <span class="exercise-name">Crawls</span>
-                        <span class="exercise-progress">
-                            <span class="exercise-count" id="crawls-count">0</span>
-                            <span style="color: var(--text-secondary);">/ 100</span>
-                        </span>
+                        <span>Crawls</span>
+                        <span class="exercise-count" id="crawls-count">0</span>
                     </div>
                     <div class="progress-bar">
                         <div class="progress-fill" id="crawls-bar" style="width: 0%"></div>
                     </div>
-                    <div class="input-group">
-                        <input type="number" class="reps-input" id="crawls-input" placeholder="Enter reps" min="0">
-                        <button class="btn-log" onclick="logExercise('crawls')">Log</button>
-                    </div>
+                    <input type="number" id="crawls-input" class="reps-input" placeholder="Enter reps..." min="0">
+                    <button class="btn-log" onclick="logExercise('crawls')">Log Crawls</button>
                 </div>
             </div>
 
-            <div class="stats-card">
-                <h2>Today's Stats</h2>
+            <!-- Statistics -->
+            <div class="stats-section">
                 <div class="stat-item">
                     <span class="stat-label">Pushups</span>
                     <span class="stat-value" id="stat-pushups">0%</span>
@@ -913,8 +757,13 @@ CREATE POLICY "allow_public_update" ON logs
                     <span class="stat-label">Total Days</span>
                     <span class="stat-value" id="stat-days">0</span>
                 </div>
+                <div class="stat-item">
+                    <span class="stat-label">Completion %</span>
+                    <span class="stat-value" id="stat-completion">0%</span>
+                </div>
             </div>
 
+            <!-- Calendar -->
             <div class="calendar-section">
                 <h2>100-Day Calendar (April 18 - July 26)</h2>
                 <div id="calendar-container"></div>
@@ -922,78 +771,259 @@ CREATE POLICY "allow_public_update" ON logs
         </div>
     </div>
 
+    <!-- Offline Queue Indicator -->
+    <div id="offlineQueueIndicator" class="offline-queue-indicator">
+        ⚠️ <span id="queueCount">0</span> changes pending sync
+    </div>
+
     <script>
         // ============================================
         // CONFIG & STATE
         // ============================================
-        const SUPABASE_URL = 'https://tzpobmqqcywoswqkmjtw.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR6cG9ibXFxY3l3b3N3cWttanR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MTczMTAsImV4cCI6MjA5MjA5MzMxMH0.N-Iu-RHDYSZ9WG_Q_ShjclD5n4M9PMz6ff1WzVJ6Aac';
+        let SUPABASE_URL = 'https://tzpobmqqcywoswqkmjtw.supabase.co';
+        let SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR6cG9ibXFxY3l3b3N3cWttanR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MTczMTAsImV4cCI6MjA5MjA5MzMxMH0.N-Iu-RHDYSZ9WG_Q_ShjclD5n4M9PMz6ff1WzVJ6Aac';
         let currentUser = 'oleg';
         const GOAL = 100;
         const TOTAL_DAYS = 100;
+        
+        // All logs from Supabase (shared across all users)
+        let allLogs = [];
+        
+        // Offline queue for sync failures
+        let syncQueue = [];
+        
+        // Realtime subscription
+        let realtimeSubscription = null;
+
+        // ============================================
+        // NETWORK STATE MONITORING
+        // ============================================
+        let isOnline = navigator.onLine;
+
+        window.addEventListener('online', () => {
+            isOnline = true;
+            updateSyncStatus('syncing');
+            showToast('Back online! Syncing queued changes...', 'info');
+            flushSyncQueue();
+        });
+
+        window.addEventListener('offline', () => {
+            isOnline = false;
+            updateSyncStatus('offline');
+            showToast('You are offline. Changes will sync when back online.', 'warning');
+        });
 
         // ============================================
         // SUPABASE INTEGRATION
         // ============================================
+        function loadConfig() {
+            const savedUrl = localStorage.getItem('supabase_url');
+            const savedKey = localStorage.getItem('supabase_key');
+            
+            if (savedUrl && savedKey) {
+                SUPABASE_URL = savedUrl;
+                SUPABASE_KEY = savedKey;
+                return true;
+            }
+            return false;
+        }
 
-        // FIX: True upsert using Prefer: resolution=merge-duplicates
-        // This requires UNIQUE(user_id, date, exercise) constraint on the table.
-        // If you haven't added it yet, run in Supabase SQL Editor:
-        //   ALTER TABLE logs ADD CONSTRAINT logs_user_date_exercise_key UNIQUE (user_id, date, exercise);
-        async function syncLog(userId, date, exercise, reps) {
+        function saveSetup() {
+            const url = document.getElementById('supabaseUrl').value.trim();
+            const key = document.getElementById('supabaseKey').value.trim();
+
+            if (!url || !key) {
+                showToast('Please enter both URL and Key', 'error');
+                return;
+            }
+
+            if (!url.startsWith('https://') || !url.includes('supabase.co')) {
+                showToast('Invalid Project URL format', 'error');
+                return;
+            }
+
+            localStorage.setItem('supabase_url', url);
+            localStorage.setItem('supabase_key', key);
+            SUPABASE_URL = url;
+            SUPABASE_KEY = key;
+
+            console.log('Credentials saved');
+            document.getElementById('setupModal').classList.add('hidden');
+            initializeApp();
+        }
+
+        /**
+         * Fetch ALL logs from Supabase (for ALL users)
+         * This is the source of truth
+         */
+        async function fetchAllLogs() {
+            if (!SUPABASE_URL || !SUPABASE_KEY) return [];
+
             try {
                 updateSyncStatus('syncing');
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/logs`, {
+                const response = await fetch(
+                    `${SUPABASE_URL}/rest/v1/logs?order=created_at.desc`,
+                    {
+                        headers: {
+                            'apikey': SUPABASE_KEY,
+                            'Authorization': `Bearer ${SUPABASE_KEY}`,
+                            'Accept': 'application/json'
+                        }
+                    }
+                );
+
+                if (response.ok) {
+                    const logs = await response.json();
+                    allLogs = logs;
+                    // Save to localStorage as backup
+                    localStorage.setItem('all_logs_cache', JSON.stringify(logs));
+                    updateSyncStatus('synced');
+                    return logs;
+                } else {
+                    console.error('Fetch error:', response.status);
+                    // Fall back to cached data
+                    const cached = localStorage.getItem('all_logs_cache');
+                    if (cached) {
+                        allLogs = JSON.parse(cached);
+                        updateSyncStatus('error');
+                        return allLogs;
+                    }
+                    updateSyncStatus('error');
+                    return [];
+                }
+            } catch (err) {
+                console.error('Fetch error:', err);
+                updateSyncStatus('error');
+                // Fall back to cached data
+                const cached = localStorage.getItem('all_logs_cache');
+                if (cached) {
+                    allLogs = JSON.parse(cached);
+                    return allLogs;
+                }
+                return [];
+            }
+        }
+
+        /**
+         * Sync a single log entry to Supabase
+         * Uses UPSERT logic: POST (insert) or PATCH (update)
+         */
+        async function syncLog(userId, date, exercise, reps) {
+            if (!SUPABASE_URL || !SUPABASE_KEY) {
+                // Queue for later
+                syncQueue.push({ userId, date, exercise, reps });
+                updateSyncQueueUI();
+                return false;
+            }
+
+            try {
+                console.log(`Syncing: ${userId} | ${date} | ${exercise} | ${reps} reps`);
+                
+                // Try INSERT first
+                const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/logs`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'apikey': SUPABASE_KEY,
                         'Authorization': `Bearer ${SUPABASE_KEY}`,
-                        'Prefer': 'resolution=merge-duplicates'  // FIX: atomic upsert
+                        'Prefer': 'resolution=merge-duplicates'
                     },
-                    body: JSON.stringify({ user_id: userId, date: date, exercise: exercise, reps: reps })
+                    body: JSON.stringify({
+                        user_id: userId,
+                        date: date,
+                        exercise: exercise,
+                        reps: reps
+                    })
                 });
 
-                if (res.ok) {
-                    console.log(`✓ Synced ${userId} ${exercise} ${reps} reps on ${date}`);
+                if (insertRes.ok) {
+                    console.log('✓ Inserted/Upserted:', userId, exercise, date);
                     updateSyncStatus('synced');
                     return true;
-                } else {
-                    const errText = await res.text();
-                    console.error(`✗ Sync failed (${res.status}):`, errText);
-                    updateSyncStatus('error');
+                }
+
+                if (insertRes.status === 409) {
+                    // Conflict: row exists, use PATCH to update
+                    console.log('Conflict detected, attempting PATCH...');
+                    const patchRes = await fetch(
+                        `${SUPABASE_URL}/rest/v1/logs?user_id=eq.${userId}&date=eq.${date}&exercise=eq.${exercise}`,
+                        {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'apikey': SUPABASE_KEY,
+                                'Authorization': `Bearer ${SUPABASE_KEY}`
+                            },
+                            body: JSON.stringify({ reps: reps })
+                        }
+                    );
+
+                    if (patchRes.ok) {
+                        console.log('✓ Patched:', userId, exercise, date);
+                        updateSyncStatus('synced');
+                        return true;
+                    }
+                    console.error('PATCH failed:', patchRes.status);
                     return false;
                 }
-            } catch (e) {
-                console.error('✗ Sync network error:', e);
-                updateSyncStatus('error');
+
+                console.error('Insert failed:', insertRes.status);
+                return false;
+            } catch (err) {
+                console.error('Sync error:', err);
                 return false;
             }
         }
 
-        // FIX: fetchUserLogs is now actually called (it was defined but never used)
-        async function fetchUserLogs(userId) {
-            try {
-                const res = await fetch(
-                    `${SUPABASE_URL}/rest/v1/logs?user_id=eq.${userId}&order=date.asc`,
-                    {
-                        headers: {
-                            'apikey': SUPABASE_KEY,
-                            'Authorization': `Bearer ${SUPABASE_KEY}`
-                        }
-                    }
-                );
-                if (res.ok) {
-                    const data = await res.json();
-                    console.log(`Fetched ${data.length} logs for ${userId} from Supabase`);
-                    return data;
+        /**
+         * Flush sync queue when back online
+         */
+        async function flushSyncQueue() {
+            if (syncQueue.length === 0) return;
+
+            console.log(`Flushing ${syncQueue.length} queued items...`);
+            
+            for (const item of syncQueue) {
+                const success = await syncLog(item.userId, item.date, item.exercise, item.reps);
+                if (!success) {
+                    showToast(`Failed to sync ${item.exercise} for ${item.userId}`, 'error');
+                    continue;
                 }
-                console.error('fetchUserLogs failed:', res.status, await res.text());
-                return null; // null = fetch failed (vs [] = genuinely no data)
-            } catch (err) {
-                console.error('fetchUserLogs network error:', err);
-                return null;
             }
+
+            syncQueue = [];
+            updateSyncQueueUI();
+            await fetchAllLogs(); // Refresh from Supabase
+            loadData();
+        }
+
+        function updateSyncQueueUI() {
+            const indicator = document.getElementById('offlineQueueIndicator');
+            const count = document.getElementById('queueCount');
+            
+            if (syncQueue.length > 0) {
+                count.textContent = syncQueue.length;
+                indicator.classList.add('show');
+            } else {
+                indicator.classList.remove('show');
+            }
+        }
+
+        /**
+         * Subscribe to realtime updates
+         * When ANY user logs data, refresh the UI for all
+         */
+        async function subscribeToRealtime() {
+            // Poll-based approach: refresh every 5 seconds
+            // (Supabase Realtime requires additional setup, this is simpler and works well)
+            setInterval(async () => {
+                if (isOnline) {
+                    await fetchAllLogs();
+                    loadData();
+                }
+            }, 5000);
+
+            console.log('Realtime polling started (5s interval)');
         }
 
         function updateSyncStatus(status) {
@@ -1005,10 +1035,13 @@ CREATE POLICY "allow_public_update" ON logs
                 el.textContent = '⟳ Syncing...';
                 el.className = 'sync-status syncing';
             } else if (status === 'error') {
-                el.textContent = '✗ Sync Error — check console';
+                el.textContent = '✗ Sync Error';
                 el.className = 'sync-status error';
-            } else {
+            } else if (status === 'offline') {
                 el.textContent = '● Offline';
+                el.className = 'sync-status offline';
+            } else {
+                el.textContent = '● Initializing...';
                 el.className = 'sync-status';
             }
         }
@@ -1020,49 +1053,44 @@ CREATE POLICY "allow_public_update" ON logs
             return new Date().toISOString().split('T')[0];
         }
 
-        function getTodayData(logs) {
-            const today = getTodayKey();
+        /**
+         * Get all exercises for a specific user on a specific date
+         */
+        function getUserDayData(userId, date) {
             const data = { pushups: 0, situps: 0, crawls: 0 };
-            logs.forEach(log => {
-                if (log.date === today) {
-                    data[log.exercise] = log.reps;
-                }
+            const dayLogs = allLogs.filter(l => l.user_id === userId && l.date === date);
+            dayLogs.forEach(log => {
+                data[log.exercise] = log.reps;
             });
             return data;
         }
 
-        // FIX: loadData now fetches from Supabase first (source of truth).
-        // Falls back to localStorage only if Supabase is unreachable.
-        async function loadData() {
-            updateSyncStatus('syncing');
-            const remoteLogs = await fetchUserLogs(currentUser);
+        /**
+         * Get all exercises for current user across all dates
+         */
+        function getCurrentUserAllData() {
+            return allLogs.filter(l => l.user_id === currentUser);
+        }
 
-            if (remoteLogs !== null) {
-                // Supabase is the source of truth — update localStorage cache
-                localStorage.setItem(`logs_${currentUser}`, JSON.stringify(remoteLogs));
-                updateUI(remoteLogs);
-                updateSyncStatus('synced');
-            } else {
-                // Supabase unreachable — fall back to local cache
-                console.warn('Using localStorage fallback for', currentUser);
-                const cachedLogs = JSON.parse(localStorage.getItem(`logs_${currentUser}`) || '[]');
-                updateUI(cachedLogs);
-                updateSyncStatus('error');
-            }
+        function loadData() {
+            const logs = getCurrentUserAllData();
+            updateUI(logs);
         }
 
         // ============================================
         // UI UPDATES
         // ============================================
         function updateUI(logs) {
-            const today = getTodayData(logs);
+            const today = getTodayKey();
+            const todayData = getUserDayData(currentUser, today);
 
-            updateExerciseUI('pushups', today.pushups);
-            updateExerciseUI('situps', today.situps);
-            updateExerciseUI('crawls', today.crawls);
-            updateStats(today, logs);
+            updateExerciseUI('pushups', todayData.pushups);
+            updateExerciseUI('situps', todayData.situps);
+            updateExerciseUI('crawls', todayData.crawls);
+            updateStats(todayData, logs);
             updateCalendar(logs);
 
+            // Clear input fields
             document.getElementById('pushups-input').value = '';
             document.getElementById('situps-input').value = '';
             document.getElementById('crawls-input').value = '';
@@ -1084,44 +1112,51 @@ CREATE POLICY "allow_public_update" ON logs
         }
 
         function updateStats(today, logs) {
-            document.getElementById('stat-pushups').textContent = 
-                Math.min(Math.round((today.pushups / GOAL) * 100), 100) + '%';
-            document.getElementById('stat-situps').textContent = 
-                Math.min(Math.round((today.situps / GOAL) * 100), 100) + '%';
-            document.getElementById('stat-crawls').textContent = 
-                Math.min(Math.round((today.crawls / GOAL) * 100), 100) + '%';
+            // Completion percentages
+            const pushupPercent = Math.round((today.pushups / GOAL) * 100);
+            const situpsPercent = Math.round((today.situps / GOAL) * 100);
+            const crawlsPercent = Math.round((today.crawls / GOAL) * 100);
 
-            const uniqueDates = new Set(logs.map(l => l.date));
-            document.getElementById('stat-days').textContent = uniqueDates.size;
+            document.getElementById('stat-pushups').textContent = `${Math.min(pushupPercent, 100)}%`;
+            document.getElementById('stat-situps').textContent = `${Math.min(situpsPercent, 100)}%`;
+            document.getElementById('stat-crawls').textContent = `${Math.min(crawlsPercent, 100)}%`;
 
-            // Streak calculation
+            // Day streak
             let streak = 0;
-            let checkDate = new Date();
+            const today = getTodayKey();
             for (let i = 0; i < TOTAL_DAYS; i++) {
+                const checkDate = new Date();
+                checkDate.setDate(checkDate.getDate() - i);
                 const dateStr = checkDate.toISOString().split('T')[0];
-                const dayLogs = logs.filter(l => l.date === dateStr);
-                const completed = dayLogs.some(l => l.exercise === 'pushups' && l.reps > 0) &&
-                                dayLogs.some(l => l.exercise === 'situps' && l.reps > 0) &&
-                                dayLogs.some(l => l.exercise === 'crawls' && l.reps > 0);
-                if (completed) {
+                
+                const dayData = getUserDayData(currentUser, dateStr);
+                const isComplete = dayData.pushups >= GOAL && dayData.situps >= GOAL && dayData.crawls >= GOAL;
+                
+                if (isComplete) {
                     streak++;
-                    checkDate.setDate(checkDate.getDate() - 1);
-                } else {
+                } else if (dateStr !== today) {
                     break;
                 }
             }
+
+            // Total days completed
+            const completedDays = new Set();
+            logs.forEach(log => {
+                const dayData = getUserDayData(currentUser, log.date);
+                if (dayData.pushups >= GOAL && dayData.situps >= GOAL && dayData.crawls >= GOAL) {
+                    completedDays.add(log.date);
+                }
+            });
+
             document.getElementById('stat-streak').textContent = streak;
+            document.getElementById('stat-days').textContent = completedDays.size;
+            document.getElementById('stat-completion').textContent = `${Math.round((completedDays.size / TOTAL_DAYS) * 100)}%`;
         }
 
         function updateCalendar(logs) {
             const container = document.getElementById('calendar-container');
             container.innerHTML = '';
 
-            // Challenge starts April 18, 2026 and runs for 100 days
-            const startDate = new Date(2026, 3, 18); // April 18, 2026
-            const endDate = new Date(2026, 6, 26); // July 26, 2026
-
-            // Generate 4 months: April, May, June, July
             const months = [
                 { name: 'April', year: 2026, days: 30, startDay: 18 },
                 { name: 'May', year: 2026, days: 31, startDay: 1 },
@@ -1140,7 +1175,6 @@ CREATE POLICY "allow_public_update" ON logs
                 const gridDiv = document.createElement('div');
                 gridDiv.className = 'calendar-grid';
 
-                // Weekday headers
                 const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
                 weekdays.forEach(day => {
                     const dayHeader = document.createElement('div');
@@ -1149,50 +1183,40 @@ CREATE POLICY "allow_public_update" ON logs
                     gridDiv.appendChild(dayHeader);
                 });
 
-                // Get first day of month
                 const firstDay = new Date(month.year, months.indexOf(month), 1);
                 const startingDayOfWeek = firstDay.getDay();
 
-                // Add empty cells for days before month starts
                 for (let i = 0; i < startingDayOfWeek; i++) {
                     const emptyCell = document.createElement('div');
                     emptyCell.className = 'calendar-day other-month';
                     gridDiv.appendChild(emptyCell);
                 }
 
-                // Add days of month
                 for (let day = month.startDay; day <= month.days; day++) {
                     const cell = document.createElement('div');
                     cell.className = 'calendar-day';
                     cell.textContent = day;
 
-                    // Check if this is today
                     const today = new Date();
                     const cellDate = new Date(month.year, months.indexOf(month), day);
                     if (cellDate.toDateString() === today.toDateString()) {
                         cell.classList.add('today');
                     }
 
-                    // Check logs for this date
                     const dateStr = cellDate.toISOString().split('T')[0];
-                    const dayLogs = logs.filter(l => l.date === dateStr);
+                    const dayData = getUserDayData(currentUser, dateStr);
+                    const isComplete = dayData.pushups >= GOAL && dayData.situps >= GOAL && dayData.crawls >= GOAL;
+                    const anyProgress = dayData.pushups > 0 || dayData.situps > 0 || dayData.crawls > 0;
 
-                    if (dayLogs.length > 0) {
-                        const allComplete = dayLogs.some(l => l.exercise === 'pushups' && l.reps >= GOAL) &&
-                                           dayLogs.some(l => l.exercise === 'situps' && l.reps >= GOAL) &&
-                                           dayLogs.some(l => l.exercise === 'crawls' && l.reps >= GOAL);
-
-                        if (allComplete) {
-                            cell.classList.add('completed');
-                        } else {
-                            cell.classList.add('partial');
-                        }
+                    if (isComplete) {
+                        cell.classList.add('completed');
+                    } else if (anyProgress) {
+                        cell.classList.add('partial');
                     }
 
-                    // Make day clickable
                     cell.style.cursor = 'pointer';
                     cell.addEventListener('click', () => {
-                        showDayDetails(dateStr, dayLogs);
+                        showDayDetails(dateStr, dayData);
                     });
 
                     gridDiv.appendChild(cell);
@@ -1204,9 +1228,9 @@ CREATE POLICY "allow_public_update" ON logs
         }
 
         // ============================================
-        // CALENDAR MODAL FUNCTIONS
+        // MODAL FUNCTIONS
         // ============================================
-        function showDayDetails(dateStr, dayLogs) {
+        function showDayDetails(dateStr, dayData) {
             const date = new Date(dateStr);
             const dateFormatted = date.toLocaleDateString('en-US', { 
                 weekday: 'long', 
@@ -1220,24 +1244,19 @@ CREATE POLICY "allow_public_update" ON logs
             const bodyEl = document.getElementById('dayModalBody');
             bodyEl.innerHTML = '';
 
-            if (dayLogs.length === 0) {
-                bodyEl.innerHTML = '<div class="day-no-data">No exercises logged on this day</div>';
-            } else {
-                const exercises = ['pushups', 'situps', 'crawls'];
-                exercises.forEach(exercise => {
-                    const log = dayLogs.find(l => l.exercise === exercise);
-                    const reps = log ? log.reps : 0;
-                    const isComplete = reps >= GOAL;
+            const exercises = ['pushups', 'situps', 'crawls'];
+            exercises.forEach(exercise => {
+                const reps = dayData[exercise] || 0;
+                const isComplete = reps >= GOAL;
 
-                    const resultDiv = document.createElement('div');
-                    resultDiv.className = `day-exercise-result ${isComplete ? 'complete' : 'incomplete'}`;
-                    resultDiv.innerHTML = `
-                        <div class="exercise-title">${exercise}</div>
-                        <div class="exercise-reps">${reps} / ${GOAL}</div>
-                    `;
-                    bodyEl.appendChild(resultDiv);
-                });
-            }
+                const resultDiv = document.createElement('div');
+                resultDiv.className = `day-exercise-result ${isComplete ? 'complete' : 'incomplete'}`;
+                resultDiv.innerHTML = `
+                    <div class="exercise-title">${exercise}</div>
+                    <div class="exercise-reps">${reps} / ${GOAL}</div>
+                `;
+                bodyEl.appendChild(resultDiv);
+            });
 
             document.getElementById('dayModal').classList.remove('hidden');
         }
@@ -1246,7 +1265,6 @@ CREATE POLICY "allow_public_update" ON logs
             document.getElementById('dayModal').classList.add('hidden');
         }
 
-        // Close modal when clicking outside
         document.addEventListener('click', function(event) {
             const modal = document.getElementById('dayModal');
             if (event.target === modal) {
@@ -1261,7 +1279,12 @@ CREATE POLICY "allow_public_update" ON logs
             const input = document.getElementById(`${exercise}-input`);
             const reps = parseInt(input.value) || 0;
 
-            if (reps <= 0) {
+            if (reps < 0) {
+                showToast('Invalid input', 'error');
+                return;
+            }
+
+            if (reps === 0) {
                 showToast('Please enter a number greater than 0', 'error');
                 return;
             }
@@ -1270,35 +1293,52 @@ CREATE POLICY "allow_public_update" ON logs
             btn.classList.add('loading');
 
             try {
-                const date = getTodayKey();
-
-                // Update localStorage cache immediately (optimistic UI)
-                const cachedLogs = JSON.parse(localStorage.getItem(`logs_${currentUser}`) || '[]');
-                const existingIndex = cachedLogs.findIndex(l => l.date === date && l.exercise === exercise);
+                // Optimistic update: update UI immediately
+                const logs = getCurrentUserAllData();
+                const todayKey = getTodayKey();
+                
+                const existingIndex = logs.findIndex(l => l.date === todayKey && l.exercise === exercise && l.user_id === currentUser);
+                
                 if (existingIndex >= 0) {
-                    cachedLogs[existingIndex].reps = reps;
+                    logs[existingIndex].reps = reps;
                 } else {
-                    cachedLogs.push({ date, exercise, reps, user_id: currentUser, created_at: new Date().toISOString() });
+                    logs.push({
+                        user_id: currentUser,
+                        date: todayKey,
+                        exercise: exercise,
+                        reps: reps,
+                        created_at: new Date().toISOString()
+                    });
                 }
-                localStorage.setItem(`logs_${currentUser}`, JSON.stringify(cachedLogs));
 
-                // FIX: Await the sync — no more fire-and-forget
-                const synced = await syncLog(currentUser, date, exercise, reps);
+                // Update UI immediately (optimistic)
+                updateUI(logs);
+                showToast(`${exercise.charAt(0).toUpperCase() + exercise.slice(1)}: ${reps} reps`, 'success');
 
-                btn.classList.remove('loading');
-
-                if (synced) {
-                    showToast(`${exercise.charAt(0).toUpperCase() + exercise.slice(1)}: ${reps} reps saved`, 'success');
-                    // Reload from Supabase so UI reflects actual DB state
-                    await loadData();
+                // Sync to Supabase in background
+                if (isOnline) {
+                    const syncSuccess = await syncLog(currentUser, todayKey, exercise, reps);
+                    if (!syncSuccess) {
+                        syncQueue.push({ userId: currentUser, date: todayKey, exercise, reps });
+                        updateSyncQueueUI();
+                        showToast('Queued for sync', 'warning');
+                    } else {
+                        // Refresh from Supabase to ensure consistency
+                        await fetchAllLogs();
+                        loadData();
+                    }
                 } else {
-                    showToast('Saved locally — sync failed. Check connection.', 'error');
-                    updateUI(cachedLogs);
+                    // Queue for later sync
+                    syncQueue.push({ userId: currentUser, date: todayKey, exercise, reps });
+                    updateSyncQueueUI();
+                    showToast('Offline: changes will sync when online', 'info');
                 }
+
             } catch (err) {
                 console.error('Error logging exercise:', err);
-                btn.classList.remove('loading');
                 showToast('Error saving exercise', 'error');
+            } finally {
+                btn.classList.remove('loading');
             }
         }
 
@@ -1319,7 +1359,7 @@ CREATE POLICY "allow_public_update" ON logs
                 document.querySelectorAll('.user-btn').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
                 currentUser = this.dataset.user;
-                // Load data from Supabase for the new user
+                console.log('Switched to user:', currentUser);
                 loadData();
             });
         });
@@ -1334,14 +1374,40 @@ CREATE POLICY "allow_public_update" ON logs
             });
         });
 
-        // FIX: On page load, fetch from Supabase (source of truth)
-        window.addEventListener('DOMContentLoaded', function() {
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        async function initializeApp() {
+            console.log('Initializing app...');
+            
+            // Load config from localStorage or show setup
+            if (!loadConfig()) {
+                document.getElementById('setupModal').classList.remove('hidden');
+                return;
+            }
+
+            // Hide setup modal
             document.getElementById('setupModal').classList.add('hidden');
+
+            // Fetch all logs from Supabase
+            console.log('Fetching logs from Supabase...');
+            await fetchAllLogs();
+
+            // Load UI with current user's data
             loadData();
 
-            // Poll Supabase every 30s so all users see each other's updates live
-            setInterval(loadData, 30000);
-        });
+            // Start realtime polling
+            subscribeToRealtime();
+
+            // Check online status
+            updateSyncStatus(isOnline ? 'synced' : 'offline');
+
+            console.log('App initialized. All logs:', allLogs);
+        }
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', initializeApp);
+        initializeApp();
     </script>
 </body>
 </html>
