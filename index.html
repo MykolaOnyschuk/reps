@@ -660,6 +660,79 @@
             color: var(--text-secondary);
         }
 
+        .day-modal-hint {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 0 0 0.25rem 0;
+        }
+
+        .day-modal-edit-row {
+            background: var(--primary);
+            border-left: 3px solid var(--accent);
+            padding: 1rem;
+        }
+
+        .day-modal-edit-row.complete {
+            border-left-color: var(--success);
+            background: rgba(0, 255, 65, 0.08);
+        }
+
+        .day-modal-edit-row.incomplete {
+            border-left-color: var(--warning);
+            background: rgba(255, 165, 0, 0.08);
+        }
+
+        .day-modal-exercise-label {
+            display: flex;
+            align-items: baseline;
+            gap: 0.35rem;
+            margin-bottom: 0.65rem;
+        }
+
+        .day-modal-exercise-name {
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+        }
+
+        .day-modal-goal-hint {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .day-modal-reps-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 0.65rem;
+            width: 100%;
+            min-width: 0;
+        }
+
+        .day-modal-reps-input {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            padding: 0.75rem;
+            background: var(--secondary);
+            border: 2px solid var(--border);
+            color: var(--text-primary);
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+        }
+
+        .day-modal-reps-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .btn-modal-save-all {
+            margin-top: 0.5rem;
+            width: 100%;
+        }
+
         /* Animations */
         @keyframes slideDown {
             from {
@@ -814,6 +887,16 @@
 
             .calendar-day {
                 font-size: 0.72rem;
+            }
+
+            .day-modal-content {
+                max-width: calc(100vw - 1.5rem);
+                margin: 0 0.75rem;
+                padding: 1.25rem;
+            }
+
+            .day-modal-reps-input {
+                font-size: 16px;
             }
         }
     </style>
@@ -1388,40 +1471,218 @@ CREATE POLICY "allow_public_update" ON logs
         // ============================================
         // CALENDAR MODAL FUNCTIONS
         // ============================================
+        function getDayLogsForUser(dateStr) {
+            const logs = JSON.parse(localStorage.getItem(`logs_${currentUser}`) || '[]');
+            return logs.filter(l => l.date === dateStr);
+        }
+
         function showDayDetails(dateStr, dayLogs) {
-            const date = new Date(dateStr);
-            const dateFormatted = date.toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
+            const parts = dateStr.split('-');
+            const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+            const dateFormatted = d.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
             });
 
             document.getElementById('dayModalTitle').textContent = dateFormatted;
-            
+
             const bodyEl = document.getElementById('dayModalBody');
             bodyEl.innerHTML = '';
+            bodyEl.dataset.editDate = dateStr;
 
-            if (dayLogs.length === 0) {
-                bodyEl.innerHTML = '<div class="day-no-data">No exercises logged on this day</div>';
-            } else {
-                const exercises = ['pushups', 'situps', 'crawls'];
-                exercises.forEach(exercise => {
-                    const log = dayLogs.find(l => normalizeExercise(l.exercise) === exercise);
-                    const reps = log ? log.reps : 0;
-                    const isComplete = reps >= GOAL;
+            const hint = document.createElement('p');
+            hint.className = 'day-modal-hint';
+            hint.textContent = `Editing as ${currentUser} · tap Save per exercise or Save all`;
+            bodyEl.appendChild(hint);
 
-                    const resultDiv = document.createElement('div');
-                    resultDiv.className = `day-exercise-result ${isComplete ? 'complete' : 'incomplete'}`;
-                    resultDiv.innerHTML = `
-                        <div class="exercise-title">${exercise}</div>
-                        <div class="exercise-reps">${reps} / ${GOAL}</div>
-                    `;
-                    bodyEl.appendChild(resultDiv);
+            const exercises = ['pushups', 'situps', 'crawls'];
+            exercises.forEach(exercise => {
+                const log = dayLogs.find(l => normalizeExercise(l.exercise) === exercise);
+                const reps = log != null ? Number(log.reps) : 0;
+                const isComplete = reps >= GOAL;
+
+                const row = document.createElement('div');
+                row.className = `day-modal-edit-row ${isComplete ? 'complete' : 'incomplete'}`;
+
+                const label = document.createElement('div');
+                label.className = 'day-modal-exercise-label';
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'day-modal-exercise-name';
+                nameSpan.textContent = exercise;
+                const goalSpan = document.createElement('span');
+                goalSpan.className = 'day-modal-goal-hint';
+                goalSpan.textContent = ` / ${GOAL}`;
+                label.appendChild(nameSpan);
+                label.appendChild(goalSpan);
+
+                const wrap = document.createElement('div');
+                wrap.className = 'day-modal-reps-wrap';
+
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.min = '0';
+                input.step = '1';
+                input.className = 'day-modal-reps-input';
+                input.dataset.exercise = exercise;
+                input.value = String(reps);
+                input.setAttribute('aria-label', `${exercise} reps for ${dateStr}`);
+
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'btn-log btn-modal-save';
+                btn.dataset.exercise = exercise;
+                btn.textContent = 'Save';
+
+                wrap.appendChild(input);
+                wrap.appendChild(btn);
+                row.appendChild(label);
+                row.appendChild(wrap);
+                bodyEl.appendChild(row);
+
+                btn.addEventListener('click', function () {
+                    saveDayExerciseFromModal(dateStr, exercise);
                 });
-            }
+                input.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        saveDayExerciseFromModal(dateStr, exercise);
+                    }
+                });
+            });
+
+            const saveAll = document.createElement('button');
+            saveAll.type = 'button';
+            saveAll.className = 'btn-setup btn-modal-save-all';
+            saveAll.textContent = 'Save all';
+            saveAll.addEventListener('click', function () {
+                saveAllDayExercisesFromModal(dateStr);
+            });
+            bodyEl.appendChild(saveAll);
 
             document.getElementById('dayModal').classList.remove('hidden');
+        }
+
+        async function saveDayExerciseFromModal(dateStr, exercise) {
+            const bodyEl = document.getElementById('dayModalBody');
+            const input = bodyEl.querySelector(`.day-modal-reps-input[data-exercise="${exercise}"]`);
+            const btn = bodyEl.querySelector(`.btn-modal-save[data-exercise="${exercise}"]`);
+            if (!input) return;
+
+            const reps = parseInt(input.value, 10);
+            if (Number.isNaN(reps) || reps < 0) {
+                showToast('Enter a valid number (0 or more)', 'error');
+                return;
+            }
+
+            const ex = normalizeExercise(exercise);
+            if (btn) btn.classList.add('loading');
+
+            try {
+                const cachedLogs = JSON.parse(localStorage.getItem(`logs_${currentUser}`) || '[]');
+                const existingIndex = cachedLogs.findIndex(
+                    l => l.date === dateStr && normalizeExercise(l.exercise) === ex
+                );
+                if (existingIndex >= 0) {
+                    cachedLogs[existingIndex].reps = reps;
+                    cachedLogs[existingIndex].exercise = ex;
+                } else {
+                    cachedLogs.push({
+                        date: dateStr,
+                        exercise: ex,
+                        reps,
+                        user_id: currentUser,
+                        created_at: new Date().toISOString()
+                    });
+                }
+                localStorage.setItem(`logs_${currentUser}`, JSON.stringify(cachedLogs));
+
+                const synced = await syncLog(currentUser, dateStr, ex, reps);
+
+                if (btn) btn.classList.remove('loading');
+
+                if (synced) {
+                    showToast(`${ex}: saved`, 'success');
+                    await loadData();
+                    showDayDetails(dateStr, getDayLogsForUser(dateStr));
+                } else {
+                    showToast('Saved locally — sync failed', 'error');
+                    updateUI(cachedLogs);
+                    showDayDetails(dateStr, getDayLogsForUser(dateStr));
+                }
+            } catch (err) {
+                console.error(err);
+                if (btn) btn.classList.remove('loading');
+                showToast('Error saving', 'error');
+            }
+        }
+
+        async function saveAllDayExercisesFromModal(dateStr) {
+            const bodyEl = document.getElementById('dayModalBody');
+            const saveAllBtn = bodyEl.querySelector('.btn-modal-save-all');
+            const exercises = ['pushups', 'situps', 'crawls'];
+
+            for (const exercise of exercises) {
+                const input = bodyEl.querySelector(`.day-modal-reps-input[data-exercise="${exercise}"]`);
+                if (!input) continue;
+                const reps = parseInt(input.value, 10);
+                if (Number.isNaN(reps) || reps < 0) {
+                    showToast(`Invalid value for ${exercise}`, 'error');
+                    return;
+                }
+            }
+
+            if (saveAllBtn) {
+                saveAllBtn.classList.add('loading');
+                saveAllBtn.disabled = true;
+            }
+
+            let syncFailed = false;
+
+            try {
+                for (const exercise of exercises) {
+                    const input = bodyEl.querySelector(`.day-modal-reps-input[data-exercise="${exercise}"]`);
+                    const reps = parseInt(input.value, 10);
+                    const ex = normalizeExercise(exercise);
+
+                    const cachedLogs = JSON.parse(localStorage.getItem(`logs_${currentUser}`) || '[]');
+                    const existingIndex = cachedLogs.findIndex(
+                        l => l.date === dateStr && normalizeExercise(l.exercise) === ex
+                    );
+                    if (existingIndex >= 0) {
+                        cachedLogs[existingIndex].reps = reps;
+                        cachedLogs[existingIndex].exercise = ex;
+                    } else {
+                        cachedLogs.push({
+                            date: dateStr,
+                            exercise: ex,
+                            reps,
+                            user_id: currentUser,
+                            created_at: new Date().toISOString()
+                        });
+                    }
+                    localStorage.setItem(`logs_${currentUser}`, JSON.stringify(cachedLogs));
+
+                    const synced = await syncLog(currentUser, dateStr, ex, reps);
+                    if (!synced) {
+                        showToast(`${exercise}: sync failed — check connection`, 'error');
+                        updateUI(cachedLogs);
+                        syncFailed = true;
+                        break;
+                    }
+                }
+
+                if (!syncFailed) {
+                    showToast('All exercises saved', 'success');
+                    await loadData();
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Error saving', 'error');
+            } finally {
+                showDayDetails(dateStr, getDayLogsForUser(dateStr));
+            }
         }
 
         function closeDayModal() {
