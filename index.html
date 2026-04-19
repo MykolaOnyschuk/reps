@@ -534,7 +534,8 @@
 
         .calendar-day.completed {
             background: linear-gradient(135deg, var(--accent), var(--accent-alt));
-            color: var(--primary);
+            color: #ffffff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
             border-color: var(--accent);
             box-shadow: 0 0 15px rgba(0, 217, 255, 0.3);
         }
@@ -1441,13 +1442,14 @@ CREATE POLICY "allow_public_update" ON logs
                     const cellDate = new Date(month.year, month.monthIndex, day);
                     const dateStr = formatLocalDateKey(cellDate);
                     const dayLogs = logs.filter(l => l.date === dateStr);
+                    const hasAnyReps = dayLogs.some(l => Number(l.reps) > 0);
 
                     if (dateStr === todayKey) {
                         cell.classList.add('today');
                     }
 
                     let allComplete = false;
-                    if (dayLogs.length > 0) {
+                    if (dayLogs.length > 0 && hasAnyReps) {
                         allComplete =
                             dayLogs.some(l => normalizeExercise(l.exercise) === 'pushups' && l.reps >= GOAL) &&
                             dayLogs.some(l => normalizeExercise(l.exercise) === 'situps' && l.reps >= GOAL) &&
@@ -1463,7 +1465,7 @@ CREATE POLICY "allow_public_update" ON logs
                     });
                     if (dateStr === todayKey) {
                         cell.title = `${nice} — Today`;
-                    } else if (dayLogs.length > 0) {
+                    } else if (hasAnyReps) {
                         cell.title = allComplete ? `${nice} — All goals met (100 each)` : `${nice} — Logged (in progress)`;
                     } else {
                         cell.title = nice;
