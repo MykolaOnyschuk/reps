@@ -1158,6 +1158,22 @@ CREATE POLICY "allow_public_update" ON logs
             return n;
         }
 
+        function canonicalizeLogs(logs) {
+            const map = new Map();
+            (logs || []).forEach((row) => {
+                if (!row || !row.date || !row.exercise) return;
+                const normalized = normalizeExercise(row.exercise);
+                const key = `${row.date}|${normalized}`;
+                const current = map.get(key);
+                const rowTs = row.created_at ? Date.parse(row.created_at) : 0;
+                const curTs = current && current.created_at ? Date.parse(current.created_at) : 0;
+                if (!current || rowTs >= curTs) {
+                    map.set(key, { ...row, exercise: normalized });
+                }
+            });
+            return Array.from(map.values());
+        }
+
         function exerciseDisplayName(ex) {
             const n = normalizeExercise(ex);
             const labels = { pushups: 'Pushups', situps: 'Situps', abs: 'Abs' };
@@ -1324,13 +1340,14 @@ CREATE POLICY "allow_public_update" ON logs
 
             if (remoteLogs !== null) {
                 // Primary: Supabase — persist full server rows to cache
-                localStorage.setItem(`logs_${currentUser}`, JSON.stringify(remoteLogs));
-                updateUI(remoteLogs);
+                const normalizedLogs = canonicalizeLogs(remoteLogs);
+                localStorage.setItem(`logs_${currentUser}`, JSON.stringify(normalizedLogs));
+                updateUI(normalizedLogs);
                 updateSyncStatus('synced');
             } else {
                 // Offline / error: last known cache (may include unsynced edits)
                 console.warn('Using localStorage fallback for', currentUser);
-                const cachedLogs = JSON.parse(localStorage.getItem(`logs_${currentUser}`) || '[]');
+                const cachedLogs = canonicalizeLogs(JSON.parse(localStorage.getItem(`logs_${currentUser}`) || '[]'));
                 updateUI(cachedLogs);
                 updateSyncStatus('error');
             }
@@ -1497,7 +1514,7 @@ CREATE POLICY "allow_public_update" ON logs
         // ============================================
         function getDayLogsForUser(dateStr) {
             const logs = JSON.parse(localStorage.getItem(`logs_${currentUser}`) || '[]');
-            return logs.filter(l => l.date === dateStr);
+            return canonicalizeLogs(logs).filter(l => l.date === dateStr);
         }
 
         function showDayDetails(dateStr, dayLogs) {
@@ -1604,7 +1621,7 @@ CREATE POLICY "allow_public_update" ON logs
             if (btn) btn.classList.add('loading');
 
             try {
-                const cachedLogs = JSON.parse(localStorage.getItem(`logs_${currentUser}`) || '[]');
+                const cachedLogs = canonicalizeLogs(JSON.parse(localStorage.getItem(`logs_${currentUser}`) || '[]'));
                 const existingIndex = cachedLogs.findIndex(
                     l => l.date === dateStr && normalizeExercise(l.exercise) === ex
                 );
@@ -1670,7 +1687,7 @@ CREATE POLICY "allow_public_update" ON logs
                     const reps = parseInt(input.value, 10);
                     const ex = normalizeExercise(exercise);
 
-                    const cachedLogs = JSON.parse(localStorage.getItem(`logs_${currentUser}`) || '[]');
+                    const cachedLogs = canonicalizeLogs(JSON.parse(localStorage.getItem(`logs_${currentUser}`) || '[]'));
                     const existingIndex = cachedLogs.findIndex(
                         l => l.date === dateStr && normalizeExercise(l.exercise) === ex
                     );
@@ -1756,7 +1773,7 @@ CREATE POLICY "allow_public_update" ON logs
                 const date = getTodayKey();
 
                 // Optimistic cache (backup if offline)
-                const cachedLogs = JSON.parse(localStorage.getItem(`logs_${currentUser}`) || '[]');
+                const cachedLogs = canonicalizeLogs(JSON.parse(localStorage.getItem(`logs_${currentUser}`) || '[]'));
                 const existingIndex = cachedLogs.findIndex(l => l.date === date && normalizeExercise(l.exercise) === ex);
                 const previousReps = existingIndex >= 0 ? Number(cachedLogs[existingIndex].reps) || 0 : 0;
                 const reps = previousReps + delta;
