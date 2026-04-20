@@ -1162,12 +1162,25 @@ CREATE POLICY "allow_public_update" ON logs
             const map = new Map();
             (logs || []).forEach((row) => {
                 if (!row || !row.date || !row.exercise) return;
-                const normalized = normalizeExercise(row.exercise);
+                const raw = String(row.exercise || '').toLowerCase().trim();
+                const normalized = normalizeExercise(raw);
                 const key = `${row.date}|${normalized}`;
                 const current = map.get(key);
                 const rowTs = row.created_at ? Date.parse(row.created_at) : 0;
                 const curTs = current && current.created_at ? Date.parse(current.created_at) : 0;
-                if (!current || rowTs >= curTs) {
+
+                // Prefer canonical exercise names over legacy aliases (e.g. abs over crawls).
+                // This avoids old "crawls=0" rows hiding newer abs totals.
+                const rowCanonical = raw === normalized ? 1 : 0;
+                const curRaw = current ? String(current.exercise || '').toLowerCase().trim() : '';
+                const curNormalized = current ? normalizeExercise(curRaw) : '';
+                const curCanonical = current && curRaw === curNormalized ? 1 : 0;
+
+                if (
+                    !current ||
+                    rowCanonical > curCanonical ||
+                    (rowCanonical === curCanonical && rowTs >= curTs)
+                ) {
                     map.set(key, { ...row, exercise: normalized });
                 }
             });
