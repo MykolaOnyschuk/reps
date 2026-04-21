@@ -977,7 +977,7 @@ CREATE POLICY "allow_public_update" ON logs
     <!-- Main App -->
     <div class="header">
         <h1>100-DAY CHALLENGE</h1>
-        <p>Pushups • Situps • Abs</p>
+        <p>Pushups • Squats • Abs</p>
         <div class="sync-status" id="syncStatus">● Offline</div>
     </div>
 
@@ -1020,18 +1020,18 @@ CREATE POLICY "allow_public_update" ON logs
 
                 <div class="exercise-group">
                     <div class="exercise-label">
-                        <span class="exercise-name">Situps</span>
+                        <span class="exercise-name">Squats</span>
                         <span class="exercise-progress">
-                            <span class="exercise-count" id="situps-count">0</span>
+                            <span class="exercise-count" id="Squats-count">0</span>
                             <span style="color: var(--text-secondary);">/ 100</span>
                         </span>
                     </div>
                     <div class="progress-bar">
-                        <div class="progress-fill" id="situps-bar" style="width: 0%"></div>
+                        <div class="progress-fill" id="Squats-bar" style="width: 0%"></div>
                     </div>
                     <div class="input-group">
-                        <input type="number" class="reps-input" id="situps-input" placeholder="Add reps" min="0" title="Adds to today’s total for this exercise">
-                        <button type="button" class="btn-log" onclick="logExercise('situps', this)">Log</button>
+                        <input type="number" class="reps-input" id="Squats-input" placeholder="Add reps" min="0" title="Adds to today’s total for this exercise">
+                        <button type="button" class="btn-log" onclick="logExercise('Squats', this)">Log</button>
                     </div>
                 </div>
 
@@ -1060,8 +1060,8 @@ CREATE POLICY "allow_public_update" ON logs
                     <span class="stat-value" id="stat-pushups">0%</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-label">Situps</span>
-                    <span class="stat-value" id="stat-situps">0%</span>
+                    <span class="stat-label">Squats</span>
+                    <span class="stat-value" id="stat-Squats">0%</span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-label">Abs</span>
@@ -1189,7 +1189,7 @@ CREATE POLICY "allow_public_update" ON logs
 
         function exerciseDisplayName(ex) {
             const n = normalizeExercise(ex);
-            const labels = { pushups: 'Pushups', situps: 'Situps', abs: 'Abs' };
+            const labels = { pushups: 'Pushups', Squats: 'Squats', abs: 'Abs' };
             return labels[n] || (n.charAt(0).toUpperCase() + n.slice(1));
         }
 
@@ -1335,7 +1335,7 @@ CREATE POLICY "allow_public_update" ON logs
 
         function getTodayData(logs) {
             const today = getTodayKey();
-            const data = { pushups: 0, situps: 0, abs: 0 };
+            const data = { pushups: 0, Squats: 0, abs: 0 };
             logs.forEach(log => {
                 if (log.date === today) {
                     const ex = normalizeExercise(log.exercise);
@@ -1373,13 +1373,13 @@ CREATE POLICY "allow_public_update" ON logs
             const today = getTodayData(logs);
 
             updateExerciseUI('pushups', today.pushups);
-            updateExerciseUI('situps', today.situps);
+            updateExerciseUI('Squats', today.Squats);
             updateExerciseUI('abs', today.abs);
             updateStats(today, logs);
             updateCalendar(logs);
 
             document.getElementById('pushups-input').value = '';
-            document.getElementById('situps-input').value = '';
+            document.getElementById('Squats-input').value = '';
             document.getElementById('abs-input').value = '';
         }
 
@@ -1401,8 +1401,8 @@ CREATE POLICY "allow_public_update" ON logs
         function updateStats(today, logs) {
             document.getElementById('stat-pushups').textContent = 
                 Math.min(Math.round((today.pushups / GOAL) * 100), 100) + '%';
-            document.getElementById('stat-situps').textContent = 
-                Math.min(Math.round((today.situps / GOAL) * 100), 100) + '%';
+            document.getElementById('stat-Squats').textContent = 
+                Math.min(Math.round((today.Squats / GOAL) * 100), 100) + '%';
             document.getElementById('stat-abs').textContent = 
                 Math.min(Math.round((today.abs / GOAL) * 100), 100) + '%';
 
@@ -1416,7 +1416,7 @@ CREATE POLICY "allow_public_update" ON logs
                 const dateStr = formatLocalDateKey(checkDate);
                 const dayLogs = logs.filter(l => l.date === dateStr);
                 const completed = dayLogs.some(l => normalizeExercise(l.exercise) === 'pushups' && l.reps > 0) &&
-                                dayLogs.some(l => normalizeExercise(l.exercise) === 'situps' && l.reps > 0) &&
+                                dayLogs.some(l => normalizeExercise(l.exercise) === 'Squats' && l.reps > 0) &&
                                 dayLogs.some(l => normalizeExercise(l.exercise) === 'abs' && l.reps > 0);
                 if (completed) {
                     streak++;
@@ -1490,7 +1490,7 @@ CREATE POLICY "allow_public_update" ON logs
                     if (dayLogs.length > 0 && hasAnyReps) {
                         allComplete =
                             dayLogs.some(l => normalizeExercise(l.exercise) === 'pushups' && l.reps >= GOAL) &&
-                            dayLogs.some(l => normalizeExercise(l.exercise) === 'situps' && l.reps >= GOAL) &&
+                            dayLogs.some(l => normalizeExercise(l.exercise) === 'Squats' && l.reps >= GOAL) &&
                             dayLogs.some(l => normalizeExercise(l.exercise) === 'abs' && l.reps >= GOAL);
                         cell.classList.add(allComplete ? 'completed' : 'partial');
                     }
@@ -1551,7 +1551,7 @@ CREATE POLICY "allow_public_update" ON logs
             hint.textContent = `Editing as ${currentUser} · tap Save per exercise or Save all`;
             bodyEl.appendChild(hint);
 
-            const exercises = ['pushups', 'situps', 'abs'];
+            const exercises = ['pushups', 'Squats', 'abs'];
             exercises.forEach(exercise => {
                 const log = dayLogs.find(l => normalizeExercise(l.exercise) === exercise);
                 const reps = log != null ? Number(log.reps) : 0;
@@ -1675,7 +1675,7 @@ CREATE POLICY "allow_public_update" ON logs
         async function saveAllDayExercisesFromModal(dateStr) {
             const bodyEl = document.getElementById('dayModalBody');
             const saveAllBtn = bodyEl.querySelector('.btn-modal-save-all');
-            const exercises = ['pushups', 'situps', 'abs'];
+            const exercises = ['pushups', 'Squats', 'abs'];
 
             for (const exercise of exercises) {
                 const input = bodyEl.querySelector(`.day-modal-reps-input[data-exercise="${exercise}"]`);
